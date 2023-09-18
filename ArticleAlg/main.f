@@ -69,8 +69,6 @@ C     gamma: friction, scalar
 C     nsteps: number of steps, scalar
 C     eta: coeficient exp{-\gamma_N \alpha_N \delta t}, scalar
 C
-C     x0: initial position, vector of size (N,m)
-C     y0: initial momentum, vector of size (N,m)
 C     xk: position at k, vector of size (N,m)
 C     xtilde: candidate positions for k+1, vector of size (N,m)
 C     xk1: position at k + 1, vector of size (N,m)
@@ -83,15 +81,14 @@ C     F: force, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 
-      PARAMETER (N = 100, m = 2, beta = 1, alpha = 0.1, gamma = 0.1)
+      PARAMETER (N = 8, m = 2, beta = 1, alpha = 0.1, gamma = 0.1)
 
-      DIMENSION x0(N,m), v0(N,m),
-     &      xk(N,m), xtilde(N,m), xk1(N,m),
-     &      vk(N,m),vtildehalf(N,m),vtilde(N,m),vk1(N,m),vtildek1(N,m),
+      DIMENSION xk(N,m), xtilde(N,m),
+     &      vk(N,m),vtildehalf(N,m),vtilde(N,m),vtildek1(N,m),
      &      F(N,m), GVe(m), GW(m)
 
-      COMMON /X/ xk, xtilde, xk1
-      COMMON /V/ vk, vtildehalf, vtilde, vtildek1, vk1
+      COMMON /X/ xk, xtilde
+      COMMON /V/ vk, vtildehalf, vtilde, vtildek1
       COMMON /G/ F, GVe, GW
 
       nsteps = 1000   
@@ -105,10 +102,11 @@ C     Step 1: Initialization of (x0, v0)
 C     We take x0 = 0 and v0 = 0
 C     We also initialize xk = x0 and vk = v0
 
-      CALL INIT(x0, v0)
+      CALL INIT()
 
 C ---------------------------------------------------------------------
       DO 10 k = 1, nsteps
+
 C ---------------------------------------------------------------------
 C     Step 2: Update the velocities with
 C     vtilde_k = \eta vk_k + \sqrt{(1 - \eta^2) / \beta_N} \G_k
@@ -126,26 +124,26 @@ C
 C     Note that we update a half step of the velocities then we update
 C     the positions and then we update the velocities again
 
-      CALL UPDATE_halfV(tstep)
-      CALL UPDATE_X(tstep)
+      CALL UPDATE_halfV(tstep, alpha)
+      CALL UPDATE_X(tstep, alpha)
       CALL UPDATE_V(tstep)
 
 C ---------------------------------------------------------------------
 C     Step 4: define the acceptance probability
 C     prob=1 ^ exp{-\beta_N (H_N(xtilde_k)-H_N(xk)+vtilde_k^2/2-vk^2/2)}
 
-      prob = CALC_PROB(beta)
-      prob = MIN(1.0, prob)
+      p = CALC_PROB(beta)
+      p = MIN(1.0, p)
 
 C ---------------------------------------------------------------------
-C     Step 5: accept or reject the candidate with probability prob
+C     Step 5: accept or reject the candidate with probability p
 
-      IF (prob > RAND(0)) THEN
-            xk1 = xtilde
-            vk1 = vtildek1
+      IF (p > RAND(0)) THEN
+            xk = xtilde
+            vk = vtildek1
       ELSE
-            xk1 = xk
-            vk1 = -vtildek1
+            xk = xk
+            vk = -vtildek1
       END IF
 
 C ---------------------------------------------------------------------
@@ -159,26 +157,22 @@ C#######################################################################
 C     Subroutines:
 
 C     INIT: initialization of (x0, v0)
-c           modifies x0, v0, vk and F
-      SUBROUTINE INIT(x0, v0)
-            PARAMETER(N = 100, m = 2)
+c           modifies xk, vk and F
+      SUBROUTINE INIT()
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x0(N,m), v0(N,m),
-     &          xk(N,m), xtilde(N,m), xk1(N,m),
-     &          vk(N,m), vtildehalf(N,m), vtilde(N,m), vk1(N,m),
-     &          F(N,m), GVe(m), GW(m)
-            COMMON /X/ xk, xtilde, xk1
-            COMMON /V/ vk, vtildehalf, vtilde, vk1
+            DIMENSION xk(N,m), xtilde(N,m),
+     &      vk(N,m),vtildehalf(N,m),vtilde(N,m),vtildek1(N,m),
+     &      F(N,m), GVe(m), GW(m)
+            COMMON /X/ xk, xtilde
+            COMMON /V/ vk, vtildehalf, vtilde, vtildek1
             COMMON /G/ F, GVe, GW
 
             DO i = 1, N
             DO j = 1, m
 
-                  x0(i,j) = -1.0 + 2*RAND(0)
-                 
-                  v0(i,j) = 0.0
-                  vk(i,j) = v0(i,j)
-
+                  xk(i,j) = -1.0 + 2*RAND(0)
+                  vk(i,j) = 0.0
                   F(i,j) = 0.0
                   
             END DO
@@ -189,15 +183,16 @@ c           modifies x0, v0, vk and F
 C     GaussianUPT_P: update the velocities with the gaussian variable
 c           modifies vtilde
       SUBROUTINE GaussianUPT_P(eta, beta)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION vk(N,m), vtildehalf(N,m), vtilde(N,m), vk1(N,m)
-            COMMON /V/ vk, vtildehalf, vtilde, vk1
+            DIMENSION 
+     &      vk(N,m),vtildehalf(N,m),vtilde(N,m),vtildek1(N,m)
+            COMMON /V/ vk, vtildehalf, vtilde, vtildek1
 
             DO i = 1, N
             DO j = 1, m
-                  p_tilde = eta*vk(i,m) + SQRT((1 - eta**2) / beta)*G()
-                  vtilde(i,m) = p_tilde
+                  v_tilde = eta*vk(i,m)+SQRT((1 - eta**2)/beta)*Gauss()
+                  vtilde(i,m) = v_tilde
             END DO
             END DO
 
@@ -205,15 +200,15 @@ c           modifies vtilde
 
 C     UPDATE_halfV: update the velocities a half step
 c           modifies vtildehalf
-      SUBROUTINE UPDATE_halfV(tstep)
-            PARAMETER(N = 100, m = 2)
+      SUBROUTINE UPDATE_halfV(tstep, alpha)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION xk(N,m), xtilde(N,m), xk1(N,m),
-     &                vk(N,m), vtildehalf(N,m), vtilde(N,m), vk1(N,m),
-     &                F(N,m)
-            COMMON /X/ xk, xtilde, xk1
-            COMMON /V/ vk, vtildehalf, vtilde, vk1
-            COMMON /G/ F
+            DIMENSION xk(N,m), xtilde(N,m),
+     &      vk(N,m),vtildehalf(N,m),vtilde(N,m),vtildek1(N,m),
+     &      F(N,m), GVe(m), GW(m)
+            COMMON /X/ xk, xtilde
+            COMMON /V/ vk, vtildehalf, vtilde, vtildek1
+            COMMON /G/ F, GVe, GW
 
             Call GRAD_H(.FALSE.)
 
@@ -229,13 +224,13 @@ c           modifies vtildehalf
 
 C     UPDATE_X: update the positions
 c           modifies xtilde
-      SUBROUTINE UPDATE_X(tstep)
-            PARAMETER(N = 100, m = 2)
+      SUBROUTINE UPDATE_X(tstep, alpha)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION xk(N,m), xtilde(N,m), xk1(N,m),
-     &                vk(N,m), vtildehalf(N,m), vtilde(N,m), vk1(N,m)
-            COMMON /X/ xk, xtilde, xk1
-            COMMON /V/ vk, vtildehalf, vtilde, vk1
+            DIMENSION xk(N,m), xtilde(N,m),
+     &      vk(N,m),vtildehalf(N,m),vtilde(N,m),vtildek1(N,m)
+            COMMON /X/ xk, xtilde
+            COMMON /V/ vk, vtildehalf, vtilde, vtildek1
 
             DO i = 1, N
             DO j = 1, m
@@ -251,13 +246,14 @@ c           modifies xtilde
 C     UPDATE_V: complete the update of the velocities
 c           modifies vtildek1
       SUBROUTINE UPDATE_V(tstep)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION xk(N,m), xtilde(N,m), xk1(N,m),
-     &      vk(N,m),vtildehalf(N,m),vtilde(N,m),vtildek1(N,m),vk1(N,m)
-            DIMENSION GHxtilde(N,m)
-            COMMON /X/ xk, xtilde, xk1
-            COMMON /V/ vk, vtildehalf, vtilde, vtildek1, vk1
+            DIMENSION xk(N,m), xtilde(N,m),
+     &      vk(N,m),vtildehalf(N,m),vtilde(N,m),vtildek1(N,m),
+     &      F(N,m), GVe(m), GW(m)
+            COMMON /X/ xk, xtilde
+            COMMON /V/ vk, vtildehalf, vtilde, vtildek1
+            COMMON /G/ F, GVe, GW
 
             CALL GRAD_H(.TRUE.)
 
@@ -274,13 +270,13 @@ c           modifies vtildek1
 C     GRAD_H: gradient of the Hamiltonian (force)
 c           modifies F, GVe and GW
       SUBROUTINE GRAD_H(next)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x(N,m), xk(N,m), xtilde(N,m), xk1(N,m)
+            DIMENSION x(N,m), xk(N,m), xtilde(N,m)
             DIMENSION F(N,m), F_aux(N,N,m), GVe(m), GW(m)
             LOGICAL next
             COMMON /G/ F, GVe, GW
-            COMMON /X/ xk, xtilde, xk1
+            COMMON /X/ xk, xtilde
 
             if (next) then
                   x = xtilde
@@ -320,9 +316,9 @@ c           modifies F, GVe and GW
 C     GRAD_Ve: gradient of the external potential
 c           modifies GVe
       SUBROUTINE GRAD_Ve(x)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x(m), GVe(m)
+            DIMENSION x(m), GVe(m), GW(m), F(N,m)
             COMMON /G/ F, GVe, GW
 
 c                 Gradient of V(x) = ||x||^2 / (2 * beta)
@@ -333,9 +329,9 @@ c                 Gradient of V(x) = ||x||^2 / (2 * beta)
 C     GRAD_W: gradient of the interaction potential
 c           modifies GW
       SUBROUTINE GRAD_W(x, y)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x(m), y(m), v(m), GW(m)
+            DIMENSION x(m), y(m), v(m), GW(m), F(N,m), GVe(m)
             COMMON /G/ F, GVe, GW
 
 c                 Gradient of W(x) = -log(||x||)
@@ -352,43 +348,43 @@ C     3-FUNCTION ARE CALLED IN FUNCTIONS
 
 C     (2-FUNCTION) G: gaussian variable
 c           return a standard gaussian variable, scalar
-      FUNCTION G()
+      FUNCTION Gauss()
             IMPLICIT REAL*8 (A-H,O-Z)
             mu = 0
             sigma = 1
-            G = mu + sigma * SQRT(-2*LOG(RAND(0)))*COS(2*PI*RAND(0))
+            Gauss = mu + sigma * SQRT(-2*LOG(RAND(0)))*COS(2*PI*RAND(0))
             RETURN
-      END FUNCTION G
+      END FUNCTION Gauss
 
 C     (1-FUNCTION) CALC_PROB: calculate the acceptance probability
 c           return the acceptance probability, scalar
       FUNCTION CALC_PROB(beta)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION vk(N,m), vtilde(N,m)
-            COMMON /V/ vk, vtilde
+            DIMENSION vk(N,m),vtildehalf(N,m),vtilde(N,m),vtildek1(N,m)
+            COMMON /V/ vk, vtildehalf, vtilde, vtildek1
 
-            prob = 1
+            CALC_PROB = 1
             DO i = 1, N
             DO j = 1, m
 
-                  prob = prob * EXP(-beta * (H(.TRUE.) - H(.FALSE.) +
-     &                             vtilde(i,j)**2 / 2 - vk(i,j)**2 / 2))
+            CALC_PROB = CALC_PROB * EXP(-beta * (H(.TRUE.)-H(.FALSE.) +
+     &                  vtilde(i,j)**2 / 2 - vk(i,j)**2 / 2))
       
             END DO
             END DO
-      
+       
             RETURN
             END FUNCTION CALC_PROB
       
 C     (3-FUNCTION) H: Hamiltonian
 c           return the Hamiltonian, scalar
       FUNCTION H(next)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             LOGICAL next
-            DIMENSION x(N,m), xk(N,m), xtilde(N,m), xk1(N,m)
-            COMMON /X/ xk, xtilde, xk1
+            DIMENSION x(N,m), xk(N,m), xtilde(N,m)
+            COMMON /X/ xk, xtilde
 
             if (next) then
                   x = xtilde
@@ -413,7 +409,7 @@ c           return the Hamiltonian, scalar
 C     (3-FUNCTION) V: external potential
 c           return the external potential, scalar
       FUNCTION Ve(x)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m)
 
@@ -426,7 +422,7 @@ c                 V(x) = ||x||^2 / (2 * beta)
 C     (3-FUNCTION) W: interaction potential
 c           return the interaction potential, scalar
       FUNCTION W(x, y)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 8, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m)
 
