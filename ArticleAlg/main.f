@@ -78,7 +78,7 @@ C     F: force, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 
-      PARAMETER (N = 8, m = 2, beta = 2.0, alpha = 1.0)
+      PARAMETER (N = 8, m = 1, beta = 2.0, alpha = 1.0)
 
       DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -88,12 +88,12 @@ C     GW: gradient of the interaction potential, vector of size (m)
       COMMON /V/ vk, vtilde, vtildek1
       COMMON /G/ F, GVe, GW
 
-      nsteps = 10000
+      nsteps = 100000
       tstep = 0.1
       gamma = 1 / alpha
 
       eta = EXP(-gamma * alpha * tstep)
-      sdn = SQRT((1 - eta**2) / (beta  * N**2))
+      sdn = SQRT((1 - eta**2) / beta)
 
 C#######################################################################
 C#######################################################################
@@ -148,13 +148,13 @@ C     Step 5: accept or reject the candidate with probability p
 
 C ---------------------------------------------------------------------
 c     Save some data every 1000 steps
-      IF (MOD(k,1000) == 1) THEN
-            WRITE(1,*) xk
-            WRITE(2,*) vk
+      IF (k .GT. 5000) THEN
+            IF (MOD(k,1000) == 1) THEN
+                  WRITE(1,*) xk
+                  WRITE(2,*) vk
+                  WRITE(*,*) k
+            END IF
       END IF
-
-C ---------------------------------------------------------------------
-c     debug
 
 C ---------------------------------------------------------------------
 
@@ -173,7 +173,7 @@ C     Subroutines:
 C     INIT: initialization of (x0, v0)
 c           modifies xk, vk
       SUBROUTINE INIT()
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -196,7 +196,7 @@ c           modifies xk, vk
 C     GaussianV: update the velocities with the gaussian variable
 c           modifies vtilde
       SUBROUTINE GaussianV(eta, sdn)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
@@ -215,7 +215,7 @@ c           modifies vtilde
 C     UPDATE: update the positions and velocities
 c           modifies xtildek1 and vtildek1
       SUBROUTINE UPDATE(tstep, alpha, beta)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -227,18 +227,14 @@ c           modifies xtildek1 and vtildek1
             CALL GRAD_H(.FALSE., beta)
 
             DO i = 1, N
-
                   vtilde(i,:) = vtilde(i,:) + alpha*F(i,:)*tstep/2
                   xtildek1(i,:) = xk(i,:) + alpha*vtilde(i,:)*tstep
-
             END DO
 
             CALL GRAD_H(.TRUE., beta)
 
             DO i = 1, N
-
                   vtildek1(i,:) = vtilde(i,:) + alpha*F(i,:)*tstep/2
-
             END DO
 
       END SUBROUTINE UPDATE  
@@ -246,10 +242,10 @@ c           modifies xtildek1 and vtildek1
 C     GRAD_H: gradient of the Hamiltonian (force)
 c           modifies F, GVe and GW
       SUBROUTINE GRAD_H(next, beta)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(N,m), xk(N,m), xtildek1(N,m)
-            DIMENSION F(N,m), F_aux(N,N,m), GVe(m), GW(m)
+            DIMENSION F_aux(N,N,m), F(N,m), GVe(m), GW(m)
             LOGICAL next
             COMMON /G/ F, GVe, GW
             COMMON /X/ xk, xtildek1
@@ -293,7 +289,7 @@ c           modifies F, GVe and GW
 C     GRAD_Ve: gradient of the external potential
 c           modifies GVe
       SUBROUTINE GRAD_Ve(x, beta)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), GVe(m), GW(m), F(N,m)
             COMMON /G/ F, GVe, GW
@@ -306,7 +302,7 @@ c                 Gradient of V(x) = ||x||^2 / (2 * beta)
 C     GRAD_W: gradient of the interaction potential
 c           modifies GW
       SUBROUTINE GRAD_W(x, y)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m), v(m), GW(m), F(N,m), GVe(m)
             COMMON /G/ F, GVe, GW
@@ -334,7 +330,7 @@ c           return a standard gaussian variable, scalar
 C     (1-FUNCTION) CALC_PROB: calculate the acceptance probability
 c           return the acceptance probability, scalar
       FUNCTION CALC_PROB(beta)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
@@ -357,7 +353,7 @@ c           return the acceptance probability, scalar
 C     (3-FUNCTION) H: Hamiltonian
 c           return the Hamiltonian, scalar
       FUNCTION H(next, beta)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             LOGICAL next
             DIMENSION x(N,m), xk(N,m), xtildek1(N,m)
@@ -386,7 +382,7 @@ c           return the Hamiltonian, scalar
 C     (3-FUNCTION) Ve: external potential
 c           return the external potential, scalar
       FUNCTION Ve(x, beta)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m)
 
@@ -399,7 +395,7 @@ c                 V(x) = ||x||^2 / (2 * beta)
 C     (3-FUNCTION) W: interaction potential
 c           return the interaction potential, scalar
       FUNCTION W(x, y)
-            PARAMETER(N = 8, m = 2)
+            PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m)
 
