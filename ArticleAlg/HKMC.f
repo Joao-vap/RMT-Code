@@ -68,6 +68,11 @@ C     alpha: step size, scalar
 C     gamma: friction, scalar
 C     nsteps: number of steps, scalar
 C     eta: coeficient exp{-\gamma_N \alpha_N \delta t}, scalar
+C     sdn: coeficient \sqrt{(1 - \eta^2) / \beta_N}, scalar
+C     pi: coeficient \pi, scalar
+C     tstep: time step, scalar
+C     niter: number of iterations to register, scalar
+C     p: acceptance probability, scalar
 C
 C     xk: position at k, vector of size (N,m)
 C     xtildek1: candidate positions for k+1, vector of size (N,m)
@@ -78,7 +83,7 @@ C     F: force, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 
-      PARAMETER (N = 8, m = 1, beta = 2.0, alpha = 1.0)
+      PARAMETER (N = 8, m = 1, beta = 2.0, alpha = 0.001)
 
       DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -88,12 +93,16 @@ C     GW: gradient of the interaction potential, vector of size (m)
       COMMON /V/ vk, vtilde, vtildek1
       COMMON /G/ F, GVe, GW
 
-      nsteps = 100000
-      tstep = 0.1
-      gamma = 1 / alpha
+      nsteps = 2000000
+      niter = 1000
+      tstep = 0.5
+      gamma = 100
 
       eta = EXP(-gamma * alpha * tstep)
       sdn = SQRT((1 - eta**2) / beta)
+      pi = ACOS(-1.d0)
+
+      call srand(657689)
 
 C#######################################################################
 C#######################################################################
@@ -108,7 +117,7 @@ C ---------------------------------------------------------------------
       OPEN(1,FILE='dataX.txt',STATUS='UNKNOWN')
       OPEN(2,FILE='dataV.txt',STATUS='UNKNOWN')
 
-      DO 10 k = 1, nsteps+1
+      DO 10 k = 1, nsteps
 
 C ---------------------------------------------------------------------
 C     Step 2: Update the velocities with
@@ -116,7 +125,7 @@ C     vtilde_k = \eta vk_k + \sqrt{(1 - \eta^2) / \beta_N} \G_k
 C     where \G_k is a standard Gaussian vector
 C     and \eta = \exp{-\gamma_N \alpha_N \delta t}
       
-      CALL GaussianV(eta, sdn)
+      CALL GaussianV(eta, sdn, pi)
 
 C ---------------------------------------------------------------------
 C     Step 3: Calculate 
@@ -133,13 +142,12 @@ C ---------------------------------------------------------------------
 C     Step 4: define the acceptance probability
 C     prob=1 ^ exp{-\beta_N (H_N(xtildek1_k)-H_N(xk)+vtilde_k^2/2-vk^2/2)}
 
-      p = CALC_PROB(beta)
-      p = MIN(1.0, p)
+      p = PROB(beta)
 
 C ---------------------------------------------------------------------
 C     Step 5: accept or reject the candidate with probability p
 
-      IF (p > RAND(0)) THEN
+      IF (RAND(0) <= p) THEN
             xk = xtildek1
             vk = vtildek1
       ELSE
@@ -148,11 +156,11 @@ C     Step 5: accept or reject the candidate with probability p
 
 C ---------------------------------------------------------------------
 c     Save some data every 1000 steps
-      IF (k .GT. 5000) THEN
-            IF (MOD(k,1000) == 1) THEN
-                  WRITE(1,*) xk
+      IF (k > nsteps/2) THEN
+            IF (MOD(k,niter) == 0) THEN
+                  WRITE(1,*) xk / SQRT(beta*N)
                   WRITE(2,*) vk
-                  WRITE(*,*) k
+                  WRITE(*,*) k, xk(1,1)
             END IF
       END IF
 
@@ -176,11 +184,9 @@ c           modifies xk, vk
             PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
-     &      vk(N,m),vtilde(N,m),vtildek1(N,m),
-     &      F(N,m), GVe(m), GW(m)
+     &                vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /X/ xk, xtildek1
             COMMON /V/ vk, vtilde, vtildek1
-            COMMON /G/ F, GVe, GW
 
             DO i = 1, N
             DO j = 1, m
@@ -195,7 +201,7 @@ c           modifies xk, vk
 
 C     GaussianV: update the velocities with the gaussian variable
 c           modifies vtilde
-      SUBROUTINE GaussianV(eta, sdn)
+      SUBROUTINE GaussianV(eta, sdn, pi)
             PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
@@ -203,10 +209,7 @@ c           modifies vtilde
 
             DO i = 1, N
             DO j = 1, m
-      
-                  v_tilde = eta * vk(i,j) + sdn * Gauss()
-                  vtilde(i,j) = v_tilde
-            
+                  vtilde(i,j) = eta * vk(i,j) + sdn * Gauss(pi)       
             END DO
             END DO
 
@@ -218,8 +221,8 @@ c           modifies xtildek1 and vtildek1
             PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
-     &      vk(N,m),vtilde(N,m),vtildek1(N,m),
-     &      F(N,m), GVe(m), GW(m)
+     &                vk(N,m),vtilde(N,m),vtildek1(N,m),
+     &                F(N,m), GVe(m), GW(m)
             COMMON /X/ xk, xtildek1
             COMMON /V/ vk, vtilde, vtildek1
             COMMON /G/ F, GVe, GW
@@ -244,17 +247,17 @@ c           modifies F, GVe and GW
       SUBROUTINE GRAD_H(next, beta)
             PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x(N,m), xk(N,m), xtildek1(N,m)
-            DIMENSION F_aux(N,N,m), F(N,m), GVe(m), GW(m)
+            DIMENSION x(N,m), xk(N,m), xtildek1(N,m),
+     &                F_aux(N,N,m), F(N,m), GVe(m), GW(m)
             LOGICAL next
             COMMON /G/ F, GVe, GW
             COMMON /X/ xk, xtildek1
 
-            if (next) then
+            IF (next) THEN
                   x = xtildek1
-            else
+            ELSE
                   x = xk
-            end if
+            END IF
 
             DO i = 1, N
                   DO j = 1, i-1
@@ -272,7 +275,7 @@ c           modifies F, GVe and GW
                   END DO
 
                   DO j = i+1,N
-                        F(i,:) = F(i,:) - F_aux(i,j,:)
+                        F(i,:) = F(i,:) - F_aux(j,i,:)
                   END DO
 
                   F(i,:) = F(i,:) / N
@@ -291,7 +294,7 @@ c           modifies GVe
       SUBROUTINE GRAD_Ve(x, beta)
             PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x(m), GVe(m), GW(m), F(N,m)
+            DIMENSION x(m), F(N,m), GVe(m), GW(m)
             COMMON /G/ F, GVe, GW
 
 c                 Gradient of V(x) = ||x||^2 / (2 * beta)
@@ -304,7 +307,8 @@ c           modifies GW
       SUBROUTINE GRAD_W(x, y)
             PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x(m), y(m), v(m), GW(m), F(N,m), GVe(m)
+            DIMENSION x(m), y(m), v(m),
+     &                F(N,m), GW(m), GVe(m)
             COMMON /G/ F, GVe, GW
 
 c                 Gradient of W(x) = -log(||x||)
@@ -321,34 +325,33 @@ C     3-FUNCTION ARE CALLED IN FUNCTIONS
 
 C     (2-FUNCTION) Gauss: gaussian variable
 c           return a standard gaussian variable, scalar
-      FUNCTION Gauss()
+      FUNCTION Gauss(pi)
             IMPLICIT REAL*8 (A-H,O-Z)
-            Gauss = sqrt(-2.*log(rand(0)))*cos(2.*pi*rand(0))
+            Gauss = sqrt(-2.*LOG(RAND()))*COS(2.*pi*RAND())
             RETURN
       END FUNCTION Gauss
 
-C     (1-FUNCTION) CALC_PROB: calculate the acceptance probability
+C     (1-FUNCTION) PROB: calculate the acceptance probability
 c           return the acceptance probability, scalar
-      FUNCTION CALC_PROB(beta)
+      FUNCTION PROB(beta)
             PARAMETER(N = 8, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
 
-            p = 1
+            Hi = H(.FALSE.,beta)
+            Hf = H(.TRUE.,beta)
+
+            PROB = EXP(-beta * (Hf-Hi))
+
             DO i = 1, N
-            DO j = 1, m
-
-            p = p *EXP(-beta * (H(.TRUE.,beta)-H(.FALSE.,beta) +
-     &                  (vtilde(i,j)**2 / 2) - (vk(i,j)**2 / 2)))
-
+                  dtilde = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
+                  dk = DOT_PRODUCT(vk(i,:),vk(i,:))
+                  PROB = PROB * EXP(-beta * (dtilde - dk) / 2)
             END DO
-            END DO
-
-            CALC_PROB = p
        
             RETURN 
-            END FUNCTION CALC_PROB
+            END FUNCTION PROB
       
 C     (3-FUNCTION) H: Hamiltonian
 c           return the Hamiltonian, scalar
@@ -399,7 +402,7 @@ c           return the interaction potential, scalar
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m)
 
-c           W(x) = -log(||x||)
+c                 W(x) = -log(||x||)
             W = -LOG(NORM2(x-y))
 
             RETURN
