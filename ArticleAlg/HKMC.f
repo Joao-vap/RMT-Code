@@ -83,7 +83,7 @@ C     F: force, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 
-      PARAMETER (N = 8, m = 1, beta = 2.0, alpha = 0.001)
+      PARAMETER (N = 8, m = 1, beta = 2.0, alpha = 0.005)
 
       DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -93,16 +93,16 @@ C     GW: gradient of the interaction potential, vector of size (m)
       COMMON /V/ vk, vtilde, vtildek1
       COMMON /G/ F, GVe, GW
 
-      nsteps = 2000000
+      nsteps = 1000000
       niter = 1000
       tstep = 0.5
-      gamma = 100
+      gamma = 10
 
       eta = EXP(-gamma * alpha * tstep)
       sdn = SQRT((1 - eta**2) / beta)
       pi = ACOS(-1.d0)
 
-      call srand(657689)
+      call srand(987991650)
 
 C#######################################################################
 C#######################################################################
@@ -160,7 +160,7 @@ c     Save some data every 1000 steps
             IF (MOD(k,niter) == 0) THEN
                   WRITE(1,*) xk / SQRT(beta*N)
                   WRITE(2,*) vk
-                  WRITE(*,*) k, xk(1,1)
+                  WRITE(*,*) k, XK(1,1), VK(1,1)
             END IF
       END IF
 
@@ -327,7 +327,10 @@ C     (2-FUNCTION) Gauss: gaussian variable
 c           return a standard gaussian variable, scalar
       FUNCTION Gauss(pi)
             IMPLICIT REAL*8 (A-H,O-Z)
-            Gauss = sqrt(-2.*LOG(RAND()))*COS(2.*pi*RAND())
+            Gauss = 1000
+            DO WHILE (Gauss > 100)
+                  Gauss = sqrt(-2.*LOG(RAND()))*COS(2.*pi*RAND())
+            END DO
             RETURN
       END FUNCTION Gauss
 

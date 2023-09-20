@@ -12,7 +12,7 @@ with open('dataX.txt') as f:
             data.append(float(i))
 
 # histogram from -3 to 3 with 100 bins
-plt.hist(data, bins=100, range=(-3, 3), density=True)
+plt.hist(data, bins=100, range=(-2, 2), density=True)
 plt.title("Histogram of dataX.txt")
 plt.xlabel("Value")
 plt.ylabel("Frequency")
