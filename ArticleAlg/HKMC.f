@@ -83,7 +83,7 @@ C     F: force, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 
-      PARAMETER (N = 10, m = 1, beta = 1.0, alpha = 0.1)
+      PARAMETER (N = 10, m = 1, beta = 2.0, alpha = 1)
 
       DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -94,9 +94,9 @@ C     GW: gradient of the interaction potential, vector of size (m)
       COMMON /G/ F, GVe, GW
 
       nsteps = 1000000
-      niter = 500
-      tstep = 0.5
-      gamma = 1 / alpha
+      niter = 100
+      tstep = 0.1
+      gamma = 1.0
 
       eta = EXP(-gamma * alpha * tstep)
       sdn = SQRT((1 - eta**2) / beta) / N
