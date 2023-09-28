@@ -94,7 +94,7 @@ C     GW: gradient of the interaction potential, vector of size (m)
       COMMON /G/ F, GVe, GW
 
       nsteps = 1000000
-      niter = 100
+      niter = 1000
       tstep = 0.1
       gamma = 1.0
 
