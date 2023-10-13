@@ -8,6 +8,7 @@ C     Author: Pimenta, J. V. A.
 C#######################################################################
 C#######################################################################
       PROGRAM HMC
+
       USE OMP_LIB
 
       IMPLICIT REAL*8 (A-H,O-Z)
@@ -84,7 +85,7 @@ C     F: force, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 
-      PARAMETER (N = 10, m = 1, beta = 2.0, alpha = 1)
+      PARAMETER (N = 50, m = 1, beta = 2.0, alpha = 0.1)
 
       DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -94,10 +95,12 @@ C     GW: gradient of the interaction potential, vector of size (m)
       COMMON /V/ vk, vtilde, vtildek1
       COMMON /G/ F, GVe, GW
 
-      nsteps = 1000000
-      niter = 1000
+      nsteps = 10000
+      niter = 500
       tstep = 0.1
-      gamma = 1.0
+      gamma = 10.0
+      t = 1.0
+      a = 5.0
 
       eta = EXP(-gamma * alpha * tstep)
       sdn = SQRT((1 - eta**2) / beta) / N
@@ -115,65 +118,88 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='dataX.txt',STATUS='UNKNOWN')
-      OPEN(2,FILE='dataV.txt',STATUS='UNKNOWN')
+      DO 10 k = 1, INT(nsteps/2)
 
-      !$OMP PARALLEL PRIVATE(k,p) SHARED(xk,vk,xtildek1,vtildek1)
-
-      !$OMP DO
-      DO 10 k = 1, nsteps
-
-! C ---------------------------------------------------------------------
-! C     Step 2: Update the velocities with
-! C     vtilde_k = \eta vk_k + \sqrt{(1 - \eta^2) / \beta_N} \G_k
-! C     where \G_k is a standard Gaussian vector
-! C     and \eta = \exp{-\gamma_N \alpha_N \delta t}
+C ---------------------------------------------------------------------
+C     Step 2: Update the velocities with
+C     vtilde_k = \eta vk_k + \sqrt{(1 - \eta^2) / \beta_N} \G_k
+C     where \G_k is a standard Gaussian vector
+C     and \eta = \exp{-\gamma_N \alpha_N \delta t}
       
-!       CALL GaussianV(eta, sdn, pi)
+      CALL GaussianV(eta, sdn, pi)
 
-! C ---------------------------------------------------------------------
-! C     Step 3: Calculate 
-! C     vtildehalf_k = vtilde_k - \alpha_N \Nabla H_N(xk) timestep/2
-! C     xtildek1_k = xk + \alpha_N vtildehalf_k timestep
-! C     vtilde = vtildehalf_k - \alpha_N \Nabla H_N(xtildek1_k) timestep/2
-! C
-! C     Note that we update a half step of the velocities then we update
-! C     the positions and then we update the velocities again
+C ---------------------------------------------------------------------
+C     Step 3: Calculate 
+C     vtildehalf_k = vtilde_k - \alpha_N \Nabla H_N(xk) timestep/2
+C     xtildek1_k = xk + \alpha_N vtildehalf_k timestep
+C     vtilde = vtildehalf_k - \alpha_N \Nabla H_N(xtildek1_k) timestep/2
+C
+C     Note that we update a half step of the velocities then we update
+C     the positions and then we update the velocities again
 
-!       CALL UPDATE(tstep, alpha, beta)
+      CALL UPDATE(tstep, alpha, beta, t, a)
 
-! C ---------------------------------------------------------------------
-! C     Step 4: define the acceptance probability
-! C     prob=1 ^ exp{-\beta_N (H_N(xtildek1_k)-H_N(xk)+vtilde_k^2/2-vk^2/2)}
+C ---------------------------------------------------------------------
+C     Step 4: define the acceptance probability
+C     prob=1 ^ exp{-\beta_N (H_N(xtildek1_k)-H_N(xk)+vtilde_k^2/2-vk^2/2)}
 
-!       p = PROB(beta)
+      p = PROB(beta, t, a)
 
-! C ---------------------------------------------------------------------
-! C     Step 5: accept or reject the candidate with probability p
+C ---------------------------------------------------------------------
+C     Step 5: accept or reject the candidate with probability p
 
-!       IF (RAND(0) <= p) THEN
-!             xk = xtildek1
-!             vk = vtildek1
-!       ELSE
-!             vk = -vtildek1
-!             CALL GRAD_H(.FALSE., beta)
-!       END IF
-
-! C ---------------------------------------------------------------------
-! c     Save some data every 1000 steps
-!       IF (k > nsteps/2) THEN
-!             IF (MOD(k,niter) == 0) THEN
-!                   WRITE(1,*) xk / SQRT(2*beta)
-!                   WRITE(2,*) vk
-!                   WRITE(*,*) k, XK(1,1), VK(1,1)
-!             END IF
-!       END IF
+      IF (RAND(0) <= p) THEN
+            xk = xtildek1
+            vk = vtildek1
+      ELSE
+            vk = -vtildek1
+            CALL GRAD_H(.FALSE., beta, t, a)
+      END IF
 
 C ---------------------------------------------------------------------
 
  10   END DO
+
+C#######################################################################
+C     We do a parallel run of the algorithm to save some data
+
+      OPEN(1,FILE='dataX.txt',STATUS='UNKNOWN')
+      OPEN(2,FILE='dataV.txt',STATUS='UNKNOWN')
+
+      PRINT *, OMP_IN_PARALLEL(), OMP_GET_MAX_THREADS()
+
+      !$OMP PARALLEL
+      print *, 'hello from thread:', OMP_GET_THREAD_NUM()
       !$OMP END PARALLEL
+ 
+      DO 20 k = INT(nsteps/2)+1, nsteps
       
+      CALL GaussianV(eta, sdn, pi)
+
+      CALL UPDATE(tstep, alpha, beta, t, a)
+
+      p = PROB(beta, t, a)
+
+      IF (RAND(0) <= p) THEN
+            xk = xtildek1
+            vk = vtildek1
+      ELSE
+            vk = -vtildek1
+            CALL GRAD_H(.FALSE., beta, t, a)
+      END IF
+
+C ---------------------------------------------------------------------
+c     Save some data every 1000 steps
+      IF (MOD(k,niter) == 0) THEN
+            WRITE(1,*) xk / SQRT(2*beta)
+            WRITE(2,*) vk
+            WRITE(*,*) k, XK(1,1), VK(1,1)
+      END IF
+
+C ---------------------------------------------------------------------
+
+ 20   END DO
+
       CLOSE(1)
       CLOSE(2)
 
@@ -187,7 +213,7 @@ C     Subroutines:
 C     INIT: initialization of (x0, v0)
 c           modifies xk, vk, F
       SUBROUTINE INIT()
-            PARAMETER(N = 10, m = 1)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -211,7 +237,7 @@ c           modifies xk, vk, F
 C     GaussianV: update the velocities with the gaussian variable
 c           modifies vtilde
       SUBROUTINE GaussianV(eta, sdn, pi)
-            PARAMETER(N = 10, m = 1)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
@@ -226,8 +252,8 @@ c           modifies vtilde
 
 C     UPDATE: update the positions and velocities
 c           modifies xtildek1 and vtildek1
-      SUBROUTINE UPDATE(tstep, alpha, beta)
-            PARAMETER(N = 10, m = 1)
+      SUBROUTINE UPDATE(tstep, alpha, beta, t, a)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -241,7 +267,7 @@ c           modifies xtildek1 and vtildek1
                   xtildek1(i,:) = xk(i,:) + alpha*vtilde(i,:)*tstep
             END DO
 
-            CALL GRAD_H(.TRUE., beta)
+            CALL GRAD_H(.TRUE., beta, t, a)
 
             DO i = 1, N
                   vtildek1(i,:) = vtilde(i,:) + alpha*F(i,:)*tstep/2
@@ -251,8 +277,8 @@ c           modifies xtildek1 and vtildek1
 
 C     GRAD_H: gradient of the Hamiltonian (force)
 c           modifies F, GVe and GW
-      SUBROUTINE GRAD_H(next, beta)
-            PARAMETER(N = 10, m = 1)
+      SUBROUTINE GRAD_H(next, beta, t, a)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(N,m), xk(N,m), xtildek1(N,m),
      &                F_aux(N,N,m), F(N,m), GVe(m), GW(m)
@@ -287,7 +313,7 @@ c           modifies F, GVe and GW
 
                   F(i,:) = F(i,:) / N
 
-                  CALL GRAD_Ve(x(i,:), beta)
+                  CALL GRAD_Ve(x(i,:), beta, t, a)
                   F(i,:) = F(i,:) - GVe
 
                   F(i,:) = F(i,:) / N
@@ -298,21 +324,30 @@ c           modifies F, GVe and GW
 
 C     GRAD_Ve: gradient of the external potential
 c           modifies GVe
-      SUBROUTINE GRAD_Ve(x, beta)
-            PARAMETER(N = 10, m = 1)
+      SUBROUTINE GRAD_Ve(x, beta, t, a)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), F(N,m), GVe(m), GW(m)
             COMMON /G/ F, GVe, GW
 
+            Gve = 0
 c                 Gradient of V(x) = ||x||^2 / (2 * beta) Beta - Hermite
-            GVe = x / beta
+            ! GVe = x / beta
+c                 Gradient of V(x) = 1/4 x^4 + 1/2 x^2 t
+            ! DO i = 1, m
+            !       GVe(i) = GVe(i) + x(i)**3 + x(i)*t
+            ! END DO
+c                 Gradient of V(x) = t/(2α) x^(2α)
+            DO i = 1, m
+                  GVe(i) = GVe(i) + t/(2*a) * x(i)**(2*a-1)
+            END DO
 
       END SUBROUTINE GRAD_Ve
 
 C     GRAD_W: gradient of the interaction potential
 c           modifies GW
       SUBROUTINE GRAD_W(x, y)
-            PARAMETER(N = 10, m = 1)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m), v(m),
      &                F(N,m), GW(m), GVe(m)
@@ -343,14 +378,14 @@ c           return a standard gaussian variable, scalar
 
 C     (1-FUNCTION) PROB: calculate the acceptance probability
 c           return the acceptance probability, scalar
-      FUNCTION PROB(beta)
-            PARAMETER(N = 10, m = 1)
+      FUNCTION PROB(beta, t, a)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
 
-            Hi = H(.FALSE.,beta)
-            Hf = H(.TRUE.,beta)
+            Hi = H(.FALSE.,beta, t, a)
+            Hf = H(.TRUE.,beta, t, a)
 
             PROB = EXP(-beta * (Hf-Hi))
 
@@ -365,8 +400,8 @@ c           return the acceptance probability, scalar
       
 C     (3-FUNCTION) H: Hamiltonian
 c           return the Hamiltonian, scalar
-      FUNCTION H(next, beta)
-            PARAMETER(N = 10, m = 1)
+      FUNCTION H(next, beta, t, a)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             LOGICAL next
             DIMENSION x(N,m), xk(N,m), xtildek1(N,m)
@@ -381,7 +416,7 @@ c           return the Hamiltonian, scalar
             H = 0.0
 
             DO i = 1, N
-                  H = H + Ve(x(i,:), beta)
+                  H = H + Ve(x(i,:), beta, t, a)
                   DO j = i+1, N
                         H = H + W(x(i,:), x(j,:)) / (2*N)
                   END DO
@@ -394,13 +429,17 @@ c           return the Hamiltonian, scalar
 
 C     (3-FUNCTION) Ve: external potential
 c           return the external potential, scalar
-      FUNCTION Ve(x, beta)
-            PARAMETER(N = 10, m = 1)
+      FUNCTION Ve(x, beta, t, a)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m)
 
 c                 V(x) = ||x||^2 / (2*beta) Beta - Hermite
-            Ve = DOT_PRODUCT(x,x) / (2*beta)
+            ! Ve = DOT_PRODUCT(x,x) / (2*beta)
+c                 V(x) = 1/4 x^4 + 1/2 x^2 t
+            ! Ve = 0.25*DOT_PRODUCT(x,x)**4 + 0.5*DOT_PRODUCT(x,x)**2 *t
+c                 V(x) = t/(2α) x^(2α)
+            Ve = t/(2*a) * DOT_PRODUCT(x,x)**(2*a)
 
             RETURN
       END FUNCTION Ve
@@ -408,7 +447,7 @@ c                 V(x) = ||x||^2 / (2*beta) Beta - Hermite
 C     (3-FUNCTION) W: interaction potential
 c           return the interaction potential, scalar
       FUNCTION W(x, y)
-            PARAMETER(N = 10, m = 1)
+            PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m)
 

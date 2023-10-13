@@ -67,45 +67,10 @@ from TracyWidom import TracyWidom
 
 #########################################################################
 
-# files = ['../Quartic/4-t1.txt', '../Quartic/4-t15.txt', '../Quartic/4-t2.txt',
-#             '../Quartic/4-t25.txt', '../Quartic/4-t3.txt']
+files = ['../Quartic/t1.txt', '../Quartic/t15300.txt', '../Quartic/t2.txt',
+            '../Quartic/t25.txt', '../Quartic/t3.txt']
 
-# data = []
-
-# for file in files:
-#     dataaux = []
-#     with open(file) as f:
-#         for line in f:
-#             aux = line.split(" ")
-#             # filter empty string and \n
-#             aux = list(filter(lambda x: x != '\n' and x != '', aux))
-#             # make a list of floats
-#             aux = list(map(float, aux))
-#             for i in aux:
-#                 dataaux.append(i)
-#     data.append(dataaux)
-
-# # were doing two subplots in one figure
-# fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
-
-# # title for the whole figure
-# fig.suptitle('Quartic Potential - Density (N=50)')
-
-# # for the first subplot
-# for i in range(5):
-
-#     axs[i].hist(data[i], bins=100, range=(-1.5, 1.5), density=True, color='gray')
-#     axs[i].set_title("t = " + str(-1.0 - 0.5*i))
-#     axs[i].set_xlabel("Value")
-#     axs[i].set_ylabel("Frequency")
-
-
-#########################################################################
-
-#########################################################################
-
-files = ['../Monic/M1.txt', '../Monic/M2.txt', '../Monic/M3.txt',
-            '../Monic/M4.txt', '../Monic/M5.txt']
+beta = 2
 
 data = []
 
@@ -126,15 +91,79 @@ for file in files:
 fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
 
 # title for the whole figure
-fig.suptitle('Monic Potential - Density (N=50)')
+fig.suptitle('Quartic Potential - Density (N=100)')
 
 # for the first subplot
 for i in range(5):
 
-    axs[i].hist(data[i], bins=100, range=(-1.5, 1.5), density=True, color='gray')
-    axs[i].set_title("alpha = " + str(1.0 + i))
+    t = -1.0 - 0.5*i
+
+    axs[i].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
+    axs[i].set_title("t = " + str(t))
     axs[i].set_xlabel("Value")
     axs[i].set_ylabel("Frequency")
+
+    if i < 2:
+        # plot theoretical distribution
+        bt = np.sqrt(1/3 * (- 2*t + 2*np.sqrt(t**2 + 12)))
+        ct = np.sqrt(1/2 * bt**2 + t)
+
+        #from -bt, bt
+        x = np.linspace(-bt, bt, 1000)
+        y = 1/(2*np.pi) * np.sqrt(bt**2 - x**2) * (x**2 + ct**2)
+
+        axs[i].plot(x, y, color='red')
+
+    else:
+        # plot theoretical distribution
+        at = np.sqrt(-2-t)
+        bt = np.sqrt(2-t)
+
+        x1 = np.linspace(-bt, -at, 500)
+        x2 = np.linspace(at, bt, 500)
+        y1 = np.abs(x1)/(2*np.pi) * np.sqrt((bt**2 - x1**2)*(x1**2 - at**2))
+        y2 = np.abs(x2)/(2*np.pi) * np.sqrt((bt**2 - x2**2)*(x2**2 - at**2))
+
+        axs[i].plot(x1, y1, color='red')
+        axs[i].plot(x2, y2, color='red')
+
+#########################################################################
+
+#########################################################################
+
+# files = ['../Monic/M1.txt', '../Monic/M2.txt', '../Monic/M3.txt',
+#             '../Monic/M4.txt', '../Monic/M5.txt']
+
+# beta = 2
+
+# data = []
+
+# for file in files:
+#     dataaux = []
+#     with open(file) as f:
+#         for line in f:
+#             aux = line.split(" ")
+#             # filter empty string and \n
+#             aux = list(filter(lambda x: x != '\n' and x != '', aux))
+#             # make a list of floats
+#             aux = list(map(float, aux))
+#             for i in aux:
+#                 dataaux.append(i)
+#     data.append(dataaux)
+
+# # were doing two subplots in one figure
+# fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
+
+# # title for the whole figure
+# fig.suptitle('Monic Potential - Density (N=100)')
+
+# # for the first subplot
+# for i in range(5):
+
+#     axs[i].hist(data[i], bins=100, range=(-2.5, 2.5), density=True, color='gray')
+#     axs[i].set_title("alpha = " + str(1.0 + i))
+#     axs[i].set_xlabel("Value")
+#     axs[i].set_ylabel("Frequency")
 
 #########################################################################
 
