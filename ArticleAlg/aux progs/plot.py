@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from TracyWidom import TracyWidom
 
-
 #########################################################################
 
 # files = ['../Ensemble Data/b1N10.txt', '../Ensemble Data/b1N50.txt', '../Ensemble Data/b1N100.txt',
@@ -54,7 +53,8 @@ from TracyWidom import TracyWidom
 #         axs[i, j].set_title("beta = " + str(beta) + ", N = " + str(N))
 #         axs[i, j].set_xlabel("Value")
 #         axs[i, j].set_ylabel("Frequency")
-
+#         axs[i, j].set_xlim(-1.5, 1.5)
+        
 # # plot the semi-circle for the axs[0,2], axs[1,2] and axs[2,2]
 # x = np.linspace(-1.5, 1.5, 1000)
 # y = 2/np.pi * np.sqrt(1 - x**2)
@@ -67,7 +67,7 @@ from TracyWidom import TracyWidom
 
 #########################################################################
 
-files = ['../Quartic/t1.txt', '../Quartic/t15300.txt', '../Quartic/t2.txt',
+files = ['../Quartic/t1.txt', '../Quartic/t15.txt', '../Quartic/t2.txt',
             '../Quartic/t25.txt', '../Quartic/t3.txt']
 
 beta = 2
@@ -88,20 +88,19 @@ for file in files:
     data.append(dataaux)
 
 # were doing two subplots in one figure
-fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
+fig, axs = plt.subplots(5, 2, sharey=True, tight_layout=True)
 
 # title for the whole figure
-fig.suptitle('Quartic Potential - Density (N=100)')
+fig.suptitle('Quartic and Monic Potential - Density (N=100)')
 
 # for the first subplot
 for i in range(5):
 
     t = -1.0 - 0.5*i
 
-    axs[i].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
-    axs[i].set_title("t = " + str(t))
-    axs[i].set_xlabel("Value")
-    axs[i].set_ylabel("Frequency")
+    axs[i][0].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
+    axs[i][0].set_title("t = " + str(t))
+    axs[i][0].set_ylabel("Frequency")
 
     if i < 2:
         # plot theoretical distribution
@@ -112,7 +111,7 @@ for i in range(5):
         x = np.linspace(-bt, bt, 1000)
         y = 1/(2*np.pi) * np.sqrt(bt**2 - x**2) * (x**2 + ct**2)
 
-        axs[i].plot(x, y, color='red')
+        axs[i][0].plot(x, y, color='red', alpha=0.5)
 
     else:
         # plot theoretical distribution
@@ -124,32 +123,35 @@ for i in range(5):
         y1 = np.abs(x1)/(2*np.pi) * np.sqrt((bt**2 - x1**2)*(x1**2 - at**2))
         y2 = np.abs(x2)/(2*np.pi) * np.sqrt((bt**2 - x2**2)*(x2**2 - at**2))
 
-        axs[i].plot(x1, y1, color='red')
-        axs[i].plot(x2, y2, color='red')
+        axs[i][0].plot(x1, y1, color='red', alpha=0.5)
+        axs[i][0].plot(x2, y2, color='red', alpha=0.5)
+
+axs[4][0].set_xlabel("Value")
+
 
 #########################################################################
 
 #########################################################################
 
-# files = ['../Monic/M1.txt', '../Monic/M2.txt', '../Monic/M3.txt',
-#             '../Monic/M4.txt', '../Monic/M5.txt']
+files = ['../Monic/M1.txt', '../Monic/M2.txt', '../Monic/M3.txt',
+            '../Monic/M4.txt', '../Monic/M5.txt']
 
-# beta = 2
+beta = 2
 
-# data = []
+data = []
 
-# for file in files:
-#     dataaux = []
-#     with open(file) as f:
-#         for line in f:
-#             aux = line.split(" ")
-#             # filter empty string and \n
-#             aux = list(filter(lambda x: x != '\n' and x != '', aux))
-#             # make a list of floats
-#             aux = list(map(float, aux))
-#             for i in aux:
-#                 dataaux.append(i)
-#     data.append(dataaux)
+for file in files:
+    dataaux = []
+    with open(file) as f:
+        for line in f:
+            aux = line.split(" ")
+            # filter empty string and \n
+            aux = list(filter(lambda x: x != '\n' and x != '', aux))
+            # make a list of floats
+            aux = list(map(float, aux))
+            for i in aux:
+                dataaux.append(i)
+    data.append(dataaux)
 
 # # were doing two subplots in one figure
 # fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
@@ -157,13 +159,30 @@ for i in range(5):
 # # title for the whole figure
 # fig.suptitle('Monic Potential - Density (N=100)')
 
-# # for the first subplot
-# for i in range(5):
+# for the first subplot
+for i in range(5):
 
-#     axs[i].hist(data[i], bins=100, range=(-2.5, 2.5), density=True, color='gray')
-#     axs[i].set_title("alpha = " + str(1.0 + i))
-#     axs[i].set_xlabel("Value")
-#     axs[i].set_ylabel("Frequency")
+    alpha = i + 1
+    axs[i][1].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
+    axs[i][1].set_title("alpha = " + str(alpha))
+
+    # # plot horizontal line in a and -a
+    # a = 0.5
+    # for j in range(1,alpha):
+    #     a = a * (2*j-1)/(2*j)
+    # a = a**(-1/(2*alpha))
+    # print(a, alpha)
+
+    # axs[i].axvline(x=a, color='red', alpha=0.5)
+    # axs[i].axvline(x=-a, color='red', alpha=0.5)
+
+axs[4][1].set_xlabel("Value")
+
+# plot the semi-circle in axs[0]
+x = np.linspace(-2, 2, 1000)
+y = 1/(2*np.pi) * np.sqrt(4 - x**2)
+
+axs[0][1].plot(x, y, color='blue', alpha=0.5)
 
 #########################################################################
 
@@ -269,15 +288,16 @@ for i in range(5):
 # # plt.plot(x, TracyWidom(2).pdf(x), label='TW2', color='blue')
 # # plt.plot(x, TracyWidom(4).pdf(x), label='TW4', color='green')
 
-# axs[0].plot(x, density_GSE, label='GSE by RM', color='red')
 
-# # set x limits
-# axs[0].set_xlim(-1.5, 1.5)
+# axs[0,0].plot(x, density_GOE, color='blue', alpha=0.4)
+# axs[1,0].plot(x, density_GUE, color='blue', alpha=0.4)
+# axs[2,0].plot(x, density_GSE, color='blue', alpha=0.4)
 
-# # plot legend
-# axs[0].legend()
+# # set axis limits
+# axs[0,0].set_xlim(-1.5,1.5)
+# axs[1,0].set_xlim(-1.5,1.5)
+# axs[2,0].set_xlim(-1.5,1.5)
 
 #########################################################################
-
 
 plt.show()
