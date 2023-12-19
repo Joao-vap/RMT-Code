@@ -1,7 +1,7 @@
 import numpy as np
 
-n_particles = 1000
-n_groups = 2
+n_particles = 100
+n_groups = 1
 steps = 100
 
 def Mod_GUE(U, S, shift, N, sigma = 1, mu = 0, escale = False):
@@ -68,6 +68,11 @@ np.savetxt('Memory_full_med_teste.txt', Memory)
 
 # plot
 import matplotlib.pyplot as plt
+
+# scale plot to 1by1
+plt.figure(figsize=(10,10))
+# remove axis
+plt.axis('off')
 
 plt.plot(Memory)
 plt.show()

@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib as mpl
 
 # Read the file
-data = np.loadtxt('diamond.txt', skiprows=1)
+data = np.loadtxt('../AD data/diamond2.txt', skiprows=1)
 
 m = '|'
 
@@ -29,9 +29,9 @@ for i in range(len(data)):
         elif data[i][j] == -2:
             plt.plot(j, i, marker=t2, color='black')
 
-# plot circle with center in (len(data)/2, len(data)/2) and radius len(data)/2
-circle = plt.Circle((len(data)/2, len(data)/2), len(data)/2, color='black', fill=False)
-plt.gcf().gca().add_artist(circle)
+# # plot circle with center in (len(data)/2, len(data)/2) and radius len(data)/2
+# circle = plt.Circle((len(data)/2, len(data)/2), len(data)/2, color='black', fill=False)
+# plt.gcf().gca().add_artist(circle)
 
 # Add a title
 plt.title('Diamond')
@@ -40,7 +40,7 @@ plt.title('Diamond')
 plt.axis('equal')
 
 # set size o image
-plt.gcf().set_size_inches(70, 70)
+plt.gcf().set_size_inches(20, 20)
 
 # Show the plot
 plt.savefig('ad_circle.png', dpi=300)

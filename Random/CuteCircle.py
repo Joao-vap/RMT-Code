@@ -35,19 +35,22 @@ colors = plt.cm.RdBu(np.linspace(0,1,ts))
 # plot the eigenvalues for each time with colorcode
 for i in range(ts):
     print(i)
-    plt.scatter(eig[i].real, eig[i].imag, color=colors[i], s=0.05)
+    plt.scatter(eig[i].real, eig[i].imag, color=colors[i], s=1)
     # for x,y in zip(eig[i].real, eig[i].imag):
     #     plt.scatter(x,y, color=colors[i], s=0.1)
+
+# make format 1 by 1
+plt.gcf().set_size_inches(20, 20)
 
 # remove axis
 plt.axis('off')
 
 # save the plot with high resolution
-plt.savefig('CuteCircleWhite.png')
+plt.savefig('CuteCircleWhite2.png')
 
 # black background
 plt.style.use('dark_background')
 
 # save the plot
-plt.savefig('CuteCircleBlack.png')
+plt.savefig('CuteCircleBlack2.png')
 

@@ -102,29 +102,29 @@ for i in range(5):
     axs[i][0].set_title("t = " + str(t))
     axs[i][0].set_ylabel("Frequency")
 
-    if i < 2:
-        # plot theoretical distribution
-        bt = np.sqrt(1/3 * (- 2*t + 2*np.sqrt(t**2 + 12)))
-        ct = np.sqrt(1/2 * bt**2 + t)
+    # if i < 2:
+    #     # plot theoretical distribution
+    #     bt = np.sqrt(1/3 * (- 2*t + 2*np.sqrt(t**2 + 12)))
+    #     ct = np.sqrt(1/2 * bt**2 + t)
 
-        #from -bt, bt
-        x = np.linspace(-bt, bt, 1000)
-        y = 1/(2*np.pi) * np.sqrt(bt**2 - x**2) * (x**2 + ct**2)
+    #     #from -bt, bt
+    #     x = np.linspace(-bt, bt, 1000)
+    #     y = 1/(2*np.pi) * np.sqrt(bt**2 - x**2) * (x**2 + ct**2)
 
-        axs[i][0].plot(x, y, color='red', alpha=0.5)
+    #     axs[i][0].plot(x, y, color='red', alpha=0.5)
 
-    else:
-        # plot theoretical distribution
-        at = np.sqrt(-2-t)
-        bt = np.sqrt(2-t)
+    # else:
+    #     # plot theoretical distribution
+    #     at = np.sqrt(-2-t)
+    #     bt = np.sqrt(2-t)
 
-        x1 = np.linspace(-bt, -at, 500)
-        x2 = np.linspace(at, bt, 500)
-        y1 = np.abs(x1)/(2*np.pi) * np.sqrt((bt**2 - x1**2)*(x1**2 - at**2))
-        y2 = np.abs(x2)/(2*np.pi) * np.sqrt((bt**2 - x2**2)*(x2**2 - at**2))
+    #     x1 = np.linspace(-bt, -at, 500)
+    #     x2 = np.linspace(at, bt, 500)
+    #     y1 = np.abs(x1)/(2*np.pi) * np.sqrt((bt**2 - x1**2)*(x1**2 - at**2))
+    #     y2 = np.abs(x2)/(2*np.pi) * np.sqrt((bt**2 - x2**2)*(x2**2 - at**2))
 
-        axs[i][0].plot(x1, y1, color='red', alpha=0.5)
-        axs[i][0].plot(x2, y2, color='red', alpha=0.5)
+    #     axs[i][0].plot(x1, y1, color='red', alpha=0.5)
+    #     axs[i][0].plot(x2, y2, color='red', alpha=0.5)
 
 axs[4][0].set_xlabel("Value")
 
@@ -166,15 +166,14 @@ for i in range(5):
     axs[i][1].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
     axs[i][1].set_title("alpha = " + str(alpha))
 
-    # # plot horizontal line in a and -a
-    # a = 0.5
-    # for j in range(1,alpha):
-    #     a = a * (2*j-1)/(2*j)
-    # a = a**(-1/(2*alpha))
-    # print(a, alpha)
+    # plot horizontal line in a and -a
+    a = 0.5
+    for j in range(1,alpha):
+        a = a * (2*j-1)/(2*j)
+    a = a**(-1/(alpha))
 
-    # axs[i].axvline(x=a, color='red', alpha=0.5)
-    # axs[i].axvline(x=-a, color='red', alpha=0.5)
+    axs[i][1].axvline(x=a, color='red', alpha=0.5)
+    axs[i][1].axvline(x=-a, color='red', alpha=0.5)
 
 axs[4][1].set_xlabel("Value")
 
