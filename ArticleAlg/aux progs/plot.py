@@ -1,7 +1,7 @@
 #read file dataX.txt and plot histogram
 import matplotlib.pyplot as plt
 import numpy as np
-from TracyWidom import TracyWidom
+#from TracyWidom import TracyWidom
 
 #########################################################################
 
@@ -65,10 +65,40 @@ from TracyWidom import TracyWidom
 
 #########################################################################
 
+# # test gaussian variables
+
+# file = '../gaussian.dat'
+
+# data = []
+# with open(file) as f:
+#     for line in f:
+#         aux = line.split(" ")
+#         # filter empty string and \n
+#         aux = list(filter(lambda x: x != '\n' and x != '', aux))
+#         # make a list of floats
+#         aux = list(map(float, aux))
+#         for i in aux:
+#             data.append(i)
+
+# # plot density
+# fig, ax = plt.subplots(1, 1, tight_layout=True)
+
+# ax.hist(data, bins=50, range=(-3, 3), density=True, color='gray')
+# ax.set_title("Gaussian Variables")
+# ax.set_xlabel("Value")
+# ax.set_ylabel("Frequency")
+# ax.set_xlim(-3, 3)
+
+# # plot teh gaussian density
+# x = np.linspace(-3, 3, 1000)
+# y = 1/np.sqrt(2*np.pi) * np.exp(-x**2/2)
+
+# ax.plot(x, y, color='red')
+
+
 #########################################################################
 
-files = ['../Quartic/t1.txt', '../Quartic/t15.txt', '../Quartic/t2.txt',
-            '../Quartic/t25.txt', '../Quartic/t3.txt']
+files = ['../Quartic/t1.dat', '../Quartic/t15.dat', '../Quartic/t2.dat', '../Quartic/t25.dat', '../Quartic/t3.dat']
 
 beta = 2
 
@@ -88,100 +118,102 @@ for file in files:
     data.append(dataaux)
 
 # were doing two subplots in one figure
-fig, axs = plt.subplots(5, 2, sharey=True, tight_layout=True)
+fig, axs = plt.subplots(len(files), 1, sharey=True, tight_layout=True)
 
 # title for the whole figure
-fig.suptitle('Quartic and Monic Potential - Density (N=100)')
+fig.suptitle('Quartic and Monic Potential - Density (N=50)')
 
 # for the first subplot
-for i in range(5):
+for i in range(len(files)):
 
-    t = -1.0 - 0.5*i
+#    t = -1.0 - 0.5*i
+    t = [-1, -1.5, -2, -2.5, -3][i]
 
-    axs[i][0].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
-    axs[i][0].set_title("t = " + str(t))
-    axs[i][0].set_ylabel("Frequency")
+    axs[i].hist(data[i], bins=100, range=(-2.5, 2.5), density=True, color='gray')
+    axs[i].set_title("t = " + str(t))
+    axs[i].set_ylabel("Frequency")
 
-    # if i < 2:
-    #     # plot theoretical distribution
-    #     bt = np.sqrt(1/3 * (- 2*t + 2*np.sqrt(t**2 + 12)))
-    #     ct = np.sqrt(1/2 * bt**2 + t)
+    if i < 2:
+        # plot theoretical distribution
+        bt = np.sqrt(1/3 * (- 2*t + 2*np.sqrt(t**2 + 12)))
+        ct = np.sqrt(1/2 * bt**2 + t)
 
-    #     #from -bt, bt
-    #     x = np.linspace(-bt, bt, 1000)
-    #     y = 1/(2*np.pi) * np.sqrt(bt**2 - x**2) * (x**2 + ct**2)
+        #from -bt, bt
+        x = np.linspace(-bt, bt, 1000)
+        y = 1/(2*np.pi) * np.sqrt(bt**2 - x**2) * (x**2 + ct**2)
 
-    #     axs[i][0].plot(x, y, color='red', alpha=0.5)
+        axs[i].plot(x, y, color='red', alpha=0.5)
 
-    # else:
-    #     # plot theoretical distribution
-    #     at = np.sqrt(-2-t)
-    #     bt = np.sqrt(2-t)
+    else:
+        # plot theoretical distribution
+        at = np.sqrt(-2-t)
+        bt = np.sqrt(2-t)
 
-    #     x1 = np.linspace(-bt, -at, 500)
-    #     x2 = np.linspace(at, bt, 500)
-    #     y1 = np.abs(x1)/(2*np.pi) * np.sqrt((bt**2 - x1**2)*(x1**2 - at**2))
-    #     y2 = np.abs(x2)/(2*np.pi) * np.sqrt((bt**2 - x2**2)*(x2**2 - at**2))
+        x1 = np.linspace(-bt, -at, 500)
+        x2 = np.linspace(at, bt, 500)
+        y1 = np.abs(x1)/(2*np.pi) * np.sqrt((bt**2 - x1**2)*(x1**2 - at**2))
+        y2 = np.abs(x2)/(2*np.pi) * np.sqrt((bt**2 - x2**2)*(x2**2 - at**2))
 
-    #     axs[i][0].plot(x1, y1, color='red', alpha=0.5)
-    #     axs[i][0].plot(x2, y2, color='red', alpha=0.5)
+        axs[i].plot(x1, y1, color='red', alpha=0.5)
+        axs[i].plot(x2, y2, color='red', alpha=0.5)
 
-axs[4][0].set_xlabel("Value")
+
+axs[len(files)-1].set_xlabel("Value")
 
 
 #########################################################################
 
 #########################################################################
 
-files = ['../Monic/M1.txt', '../Monic/M2.txt', '../Monic/M3.txt',
-            '../Monic/M4.txt', '../Monic/M5.txt']
+# files = ['../Monic/M1.txt', '../Monic/M2.txt', '../Monic/M3.txt',
+#             '../Monic/M4.txt', '../Monic/M5.txt']
 
-beta = 2
+# beta = 2
 
-data = []
+# data = []
 
-for file in files:
-    dataaux = []
-    with open(file) as f:
-        for line in f:
-            aux = line.split(" ")
-            # filter empty string and \n
-            aux = list(filter(lambda x: x != '\n' and x != '', aux))
-            # make a list of floats
-            aux = list(map(float, aux))
-            for i in aux:
-                dataaux.append(i)
-    data.append(dataaux)
+# for file in files:
+#     dataaux = []
+#     with open(file) as f:
+#         for line in f:
+#             aux = line.split(" ")
+#             # filter empty string and \n
+#             aux = list(filter(lambda x: x != '\n' and x != '', aux))
+#             # make a list of floats
+#             aux = list(map(float, aux))
+#             for i in aux:
+#                 dataaux.append(i)
+#     data.append(dataaux)
 
-# # were doing two subplots in one figure
-# fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
+# # # were doing two subplots in one figure
+# # fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
 
-# # title for the whole figure
-# fig.suptitle('Monic Potential - Density (N=100)')
+# # # title for the whole figure
+# # fig.suptitle('Monic Potential - Density (N=100)')
 
-# for the first subplot
-for i in range(5):
+# # for the first subplot
+# for i in range(5):
 
-    alpha = i + 1
-    axs[i][1].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
-    axs[i][1].set_title("alpha = " + str(alpha))
+#     alpha = i + 1
+#     axs[i][1].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
+#     axs[i][1].set_title("alpha = " + str(alpha))
 
-    # plot horizontal line in a and -a
-    a = 0.5
-    for j in range(1,alpha):
-        a = a * (2*j-1)/(2*j)
-    a = a**(-1/(alpha))
+#     # plot horizontal line in a and -a
+#     a = 0.5
+#     for j in range(1,alpha):
+#         a = a * (2*j-1)/(2*j)
+#     a = a**(-1/(alpha))
 
-    axs[i][1].axvline(x=a, color='red', alpha=0.5)
-    axs[i][1].axvline(x=-a, color='red', alpha=0.5)
+#     axs[i][1].axvline(x=a, color='red', alpha=0.5)
+#     axs[i][1].axvline(x=-a, color='red', alpha=0.5)
 
-axs[4][1].set_xlabel("Value")
+# axs[4][1].set_xlabel("Value")
 
-# plot the semi-circle in axs[0]
-x = np.linspace(-2, 2, 1000)
-y = 1/(2*np.pi) * np.sqrt(4 - x**2)
+# # plot the semi-circle in axs[0]
+# x = np.linspace(-2, 2, 1000)
+# y = 1/(2*np.pi) * np.sqrt(4 - x**2)
 
-axs[0][1].plot(x, y, color='blue', alpha=0.5)
+# axs[0][1].plot(x, y, color='blue', alpha=0.5)
 
 #########################################################################
 
