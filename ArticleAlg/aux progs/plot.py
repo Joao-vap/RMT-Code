@@ -1,13 +1,13 @@
 #read file dataX.txt and plot histogram
 import matplotlib.pyplot as plt
 import numpy as np
-#from TracyWidom import TracyWidom
+from TracyWidom import TracyWidom
 
 #########################################################################
 
 # files = ['../Ensemble Data/b1N10.txt', '../Ensemble Data/b1N50.txt', '../Ensemble Data/b1N100.txt',
 #          '../Ensemble Data/b2N10.txt', '../Ensemble Data/b2N50.txt', '../Ensemble Data/b2N100.txt',
-#          '../Ensemble Data/b4N10.txt', '../Ensemble Data/b4N50.txt', '../Ensemble Data/b4N100.txt']
+#          '../GSE/n10.dat', '../Ensemble Data/b4N50.txt', '../Ensemble Data/b4N100.txt']
 
 # data = []
 
@@ -222,9 +222,6 @@ axs[len(files)-1].set_xlabel("Value")
 # # We are going to compute the density of eigenvalues of a Random Matrix
 # # in the models of GOE, GUE and GSE
 
-# import numpy as np
-# import matplotlib.pyplot as plt
-
 # # We define the number of eigenvalues
 # N = 10
 
@@ -325,9 +322,9 @@ axs[len(files)-1].set_xlabel("Value")
 # axs[2,0].plot(x, density_GSE, color='blue', alpha=0.4)
 
 # # set axis limits
-# axs[0,0].set_xlim(-1.5,1.5)
-# axs[1,0].set_xlim(-1.5,1.5)
-# axs[2,0].set_xlim(-1.5,1.5)
+# axs[0,0].set_xlim(-3, 3)
+# axs[1,0].set_xlim(-3, 3)
+# axs[2,0].set_xlim(-3, 3)
 
 #########################################################################
 
