@@ -81,7 +81,7 @@ C     xtildek1: candidate positions for k+1, vector of size (N,m)
 C     vk: velocities at k, vector of size (N,m)
 C     vtilde: gaussian modified velocities, vector of size (N,m)
 C     vtildek1: candidate velocities for k+1, vector of size (N,m)
-C     F: force, vector of size (N,m)
+C     GH: gradient of Hamiltonian, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 
@@ -89,11 +89,15 @@ C     GW: gradient of the interaction potential, vector of size (m)
 
       DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
-     &      F(N,m), GVe(m), GW(m)
+     &     GH(N,m), GHold(N, m), GVe(m), GW(m)
 
       COMMON /X/ xk, xtildek1
       COMMON /V/ vk, vtilde, vtildek1
-      COMMON /G/ F, GVe, GW
+      COMMON /G/ GH, GHold, GVe, GW
+      COMMON /Hk/ Hi, Hf
+
+      Hi = 0.0
+      Hf = 0.0
 
       nsteps = 200000
       niter = 500
@@ -115,6 +119,7 @@ C     We take x0 = U(-1,1) and v0 = 0
 C     We also initialize xk = x0 and vk = v0
 
       CALL INIT()
+      Hi = H(.FALSE.,beta, t, a)
 
 C ---------------------------------------------------------------------
 
@@ -129,7 +134,7 @@ C     vtilde_k = \eta vk_k + \sqrt{(1 - \eta^2) / \beta_N} \G_k
 C     where \G_k is a standard Gaussian vector
 C     and \eta = \exp{-\gamma_N \alpha_N \delta t}
       
-      CALL GaussianV(eta, sdn, pi)
+      CALL L2_ORNSUHLEN(eta, sdn, pi)
 
 C ---------------------------------------------------------------------
 C     Step 3: Calculate 
@@ -140,24 +145,14 @@ C
 C     Note that we update a half step of the velocities then we update
 C     the positions and then we update the velocities again
 
-      CALL UPDATE(tstep, alpha, beta, t, a)
+      CALL L1_VERLET(tstep, alpha, beta, t, a)
 
 C ---------------------------------------------------------------------
 C     Step 4: define the acceptance probability
 C     prob=1 ^ exp{-\beta_N (H_N(xtildek1_k)-H_N(xk)+vtilde_k^2/2-vk^2/2)}
+C     accept or reject the candidate with probability p
 
-      p = PROBLOG(beta, t, a)
-
-C ---------------------------------------------------------------------
-C     Step 5: accept or reject the candidate with probability p
-
-      IF (LOG(RAND(0)) <= p) THEN
-            xk = xtildek1
-            vk = vtildek1
-      ELSE
-            vk = -vtildek1
-            CALL GRAD_H(.FALSE., beta, t, a)
-      END IF
+      CALL METROPOLIS() 
 
 C ---------------------------------------------------------------------
 c     Save some data every 1000 steps
@@ -184,32 +179,32 @@ C#######################################################################
 C     Subroutines:
 
 C     INIT: initialization of (x0, v0)
-c           modifies xk, vk, F
+c           modifies xk, vk, GH
       SUBROUTINE INIT()
             PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m),vtilde(N,m),vtildek1(N,m),
-     &                F(N,m), GVe(m), GW(m)
+     &                GH(N,m), GHold(N, m), GVe(m), GW(m)
             COMMON /X/ xk, xtildek1
             COMMON /V/ vk, vtilde, vtildek1
-            COMMON /G/ F, GVe, GW
+            COMMON /G/ GH, GHold, GVe, GW
 
             DO i = 1, N
             DO j = 1, m
 
                   xk(i,j) = -1.0 + 2*RAND(0)
                   vk(i,j) = 0.0
-                  F(i,j) = 0.0                  
+                  GH(i,j) = 0.0                  
 
             END DO
             END DO
 
       END SUBROUTINE INIT
 
-C     GaussianV: update the velocities with the gaussian variable
+C     L2_ORNSUHLEN: update the velocities with the gaussian variable
 c           modifies vtilde
-      SUBROUTINE GaussianV(eta, sdn, pi)
+      SUBROUTINE L2_ORNSUHLEN(eta, sdn, pi)
             PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
@@ -221,75 +216,69 @@ c           modifies vtilde
             END DO
             END DO
 
-      END SUBROUTINE GaussianV
+      END SUBROUTINE L2_ORNSUHLEN
 
-C     UPDATE: update the positions and velocities
+C     L1_VERLET: update the positions and velocities
 c           modifies xtildek1 and vtildek1
-      SUBROUTINE UPDATE(tstep, alpha, beta, t, a)
+      SUBROUTINE L1_VERLET(tstep, alpha, beta, t, a)
             PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m),vtilde(N,m),vtildek1(N,m),
-     &                F(N,m), GVe(m), GW(m)
+     &                GH(N,m), GHold(N, m), GVe(m), GW(m)
             COMMON /X/ xk, xtildek1
             COMMON /V/ vk, vtilde, vtildek1
-            COMMON /G/ F, GVe, GW
+            COMMON /G/ GH, GHold, GVe, GW
 
             DO i = 1, N
-                  vtilde(i,:) = vtilde(i,:) + alpha*F(i,:)*tstep/2
+                  vtilde(i,:) = vtilde(i,:) + alpha*GH(i,:)*tstep/2
                   xtildek1(i,:) = xk(i,:) + alpha*vtilde(i,:)*tstep
             END DO
 
-            CALL GRAD_H(.TRUE., beta, t, a)
+            GHold = GH
+            CALL GRAD_H(beta, t, a)
 
             DO i = 1, N
-                  vtildek1(i,:) = vtilde(i,:) + alpha*F(i,:)*tstep/2
+                  vtildek1(i,:) = vtilde(i,:) + alpha*GH(i,:)*tstep/2
             END DO
 
-      END SUBROUTINE UPDATE  
+      END SUBROUTINE L1_VERLET  
 
 C     GRAD_H: gradient of the Hamiltonian (force)
-c           modifies F, GVe and GW
-      SUBROUTINE GRAD_H(next, beta, t, a)
+c           modifies GH, GVe and GW
+      SUBROUTINE GRAD_H(beta, t, a)
             PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x(N,m), xk(N,m), xtildek1(N,m),
-     &                F_aux(N,N,m), F(N,m), GVe(m), GW(m)
-            LOGICAL next
-            COMMON /G/ F, GVe, GW
+            DIMENSION xk(N,m), xtildek1(N,m),
+     &                GH_aux(N,N,m), GH(N,m), GHold(N, m), GVe(m), GW(m)
+            COMMON /G/ GH, GHold, GVe, GW
             COMMON /X/ xk, xtildek1
-
-            IF (next) THEN
-                  x = xtildek1
-            ELSE
-                  x = xk
-            END IF
 
             DO i = 1, N
                   DO j = 1, i-1
-                        CALL GRAD_W(x(i,:), x(j,:))
-                        F_aux(i,j,:) = - GW
+                        CALL GRAD_W(xtildek1(i,:), xtildek1(j,:))
+                        GH_aux(i,j,:) = - GW
                   END DO
             END DO
 
             DO i = 1, N
 
-                  F(i,:) = 0.0
+                  GH(i,:) = 0.0
 
                   DO j = 1,i-1
-                        F(i,:) = F(i,:) + F_aux(i,j,:)
+                        GH(i,:) = GH(i,:) + GH_aux(i,j,:)
                   END DO
 
                   DO j = i+1,N
-                        F(i,:) = F(i,:) - F_aux(j,i,:)
+                        GH(i,:) = GH(i,:) - GH_aux(j,i,:)
                   END DO
 
-                  F(i,:) = F(i,:) / N 
+                  GH(i,:) = GH(i,:) / N 
 
-                  CALL GRAD_Ve(x(i,:), beta, t, a)
-                  F(i,:) = F(i,:) - GVe
+                  CALL GRAD_Ve(xtildek1(i,:), beta, t, a)
+                  GH(i,:) = GH(i,:) - GVe
 
-                  F(i,:) = F(i,:) / N
+                  GH(i,:) = GH(i,:) / N
 
             END DO
 
@@ -300,8 +289,8 @@ c           modifies GVe
       SUBROUTINE GRAD_Ve(x, beta, t, a)
             PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
-            DIMENSION x(m), F(N,m), GVe(m), GW(m)
-            COMMON /G/ F, GVe, GW
+            DIMENSION x(m), GH(N,m), GHold(N, m), GVe(m), GW(m)
+            COMMON /G/ GH, GHold, GVe, GW
 
             GVe = 0
 c           -----------------------------------------------------------
@@ -330,8 +319,8 @@ c           modifies GW
             PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m), v(m),
-     &                F(N,m), GW(m), GVe(m)
-            COMMON /G/ F, GVe, GW
+     &                GH(N,m), GHold(N,m), GW(m), GVe(m)
+            COMMON /G/ GH, GHold, GVe, GW
 
 c          -----------------------------------------------------------
 c                 Gradient of W(x) = -log(||x||)
@@ -341,6 +330,30 @@ c                 Logarithmic interaction - 2D restricted to 1D
 c          -----------------------------------------------------------
 
       END SUBROUTINE GRAD_W
+
+C     METROPOLIS: define the acceptance probability
+c           modifies xk, vk
+      SUBROUTINE METROPOLIS()
+            PARAMETER(N = 50, m = 1)
+            IMPLICIT REAL*8 (A-H,O-Z)
+            DIMENSION xk(N,m), xtildek1(N,m),
+     &                vk(N,m),vtilde(N,m),vtildek1(N,m)
+            COMMON /X/ xk, xtildek1
+            COMMON /V/ vk, vtilde, vtildek1
+
+            p = PROBLOG(beta, t, a)
+            
+            IF (LOG(RAND(0)) <= p) THEN
+                  xk = xtildek1
+                  vk = vtildek1
+            ELSE
+                  vk = -vtildek1
+                  GH = GHold
+            END IF
+
+      END SUBROUTINE METROPOLIS
+
+
 C#######################################################################
 C#######################################################################
 C     Functions:
@@ -375,8 +388,8 @@ c           return the log of acceptance probability, scalar
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
+            COMMON /Hk/ Hi, Hf
 
-            Hi = H(.FALSE.,beta, t, a)
             Hf = H(.TRUE.,beta, t, a)
 
             PROBLOG = -beta * (Hf-Hi)
@@ -387,6 +400,8 @@ C                 Energia cinética
                   aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
                   PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
             END DO
+
+            Hi = Hf
        
             RETURN 
             END FUNCTION PROBLOG
