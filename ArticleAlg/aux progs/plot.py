@@ -121,7 +121,7 @@ for file in files:
 fig, axs = plt.subplots(len(files), 1, sharey=True, tight_layout=True)
 
 # title for the whole figure
-fig.suptitle('Quartic and Monic Potential - Density (N=50)')
+fig.suptitle('Quartic Potential - Density (N=50)')
 
 # for the first subplot
 for i in range(len(files)):
@@ -131,7 +131,6 @@ for i in range(len(files)):
 
     axs[i].hist(data[i], bins=100, range=(-2.5, 2.5), density=True, color='gray')
     axs[i].set_title("t = " + str(t))
-    axs[i].set_ylabel("Frequency")
 
     if i < 2:
         # plot theoretical distribution
@@ -157,7 +156,7 @@ for i in range(len(files)):
         axs[i].plot(x1, y1, color='red', alpha=0.5)
         axs[i].plot(x2, y2, color='red', alpha=0.5)
 
-
+axs[2].set_ylabel("Frequency")
 axs[len(files)-1].set_xlabel("Value")
 
 
