@@ -84,12 +84,15 @@ C     vtildek1: candidate velocities for k+1, vector of size (N,m)
 C     GH: gradient of Hamiltonian, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
+C     GHold: gradient of Hamiltonian at k-1, vector of size (N,m)
+C     Hi: Hamiltonian at k, scalar
+C     Hf: Hamiltonian at k+1, scalar
 
       PARAMETER (N = 50, m = 1, beta = 2.0, alpha = 0.1)
 
       DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
-     &     GH(N,m), GHold(N, m), GVe(m), GW(m)
+     &      GH(N,m), GHold(N, m), GVe(m), GW(m)
 
       COMMON /X/ xk, xtildek1
       COMMON /V/ vk, vtilde, vtildek1
@@ -99,12 +102,12 @@ C     GW: gradient of the interaction potential, vector of size (m)
       Hi = 0.0
       Hf = 0.0
 
-      nsteps = 200000
-      niter = 500
+      nsteps = 2000000
+      niter = 1000
       tstep = 0.1
       gamma = 1.0
-      t = -1.0
-      a = 1.0
+      t = 1.0
+      a = 5.0
 
       eta = EXP(-gamma * alpha * tstep)
       sdn = SQRT((1 - eta**2) / beta) / N
@@ -123,7 +126,7 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='Quartic/t1.dat',STATUS='UNKNOWN')
+      OPEN(1,FILE='Monic/a5.dat',STATUS='UNKNOWN')
       OPEN(2,FILE='dataV.txt',STATUS='UNKNOWN')
 
       DO 10 k = 1, nsteps
@@ -152,7 +155,7 @@ C     Step 4: define the acceptance probability
 C     prob=1 ^ exp{-\beta_N (H_N(xtildek1_k)-H_N(xk)+vtilde_k^2/2-vk^2/2)}
 C     accept or reject the candidate with probability p
 
-      CALL METROPOLIS() 
+      CALL METROPOLIS(beta, t, a) 
 
 C ---------------------------------------------------------------------
 c     Save some data every 1000 steps
@@ -177,7 +180,6 @@ C#######################################################################
 
 C#######################################################################
 C     Subroutines:
-
 C     INIT: initialization of (x0, v0)
 c           modifies xk, vk, GH
       SUBROUTINE INIT()
@@ -237,7 +239,7 @@ c           modifies xtildek1 and vtildek1
 
             GHold = GH
             CALL GRAD_H(beta, t, a)
-
+      
             DO i = 1, N
                   vtildek1(i,:) = vtilde(i,:) + alpha*GH(i,:)*tstep/2
             END DO
@@ -300,15 +302,15 @@ c                 Quadratic potential
 c           -----------------------------------------------------------
 c                 Gradient of V(x) = 1/4 x^4 + 1/2 x^2 t
 c                 Quartic potential
-            DO i = 1, m
-                  GVe(i) = GVe(i) + (x(i)**3 + x(i)*t)/beta
-            END DO
-c           -----------------------------------------------------------
-c                 Gradient of V(x) = t/(2α) x^(2α)
-c                 Monic potential
             ! DO i = 1, m
-            !        GVe(i) = GVe(i) +  t * x(i)**(2*a-1)
+            !       GVe(i) = GVe(i) + (x(i)**3 + x(i)*t)/beta
             ! END DO
+c           -----------------------------------------------------------
+c                 Gradient of V(x) = t x^(2α)
+c                 Monic potential
+            DO i = 1, m
+                   GVe(i) = GVe(i) +  (2*a*t * x(i)**(2*a-1)) / beta
+            END DO
 c           -----------------------------------------------------------
 
       END SUBROUTINE GRAD_Ve
@@ -333,7 +335,7 @@ c          -----------------------------------------------------------
 
 C     METROPOLIS: define the acceptance probability
 c           modifies xk, vk
-      SUBROUTINE METROPOLIS()
+      SUBROUTINE METROPOLIS(beta, t, a)
             PARAMETER(N = 50, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
@@ -449,15 +451,15 @@ c                 Quadratic potential
 c           -----------------------------------------------------------            
 c                 V(x) = 1/4 x^4 + 1/2 x^2 t
 c                 Quartic potential
-            DO i = 1, m
-                  Ve = Ve + (x(i)**4 / 4 + x(i)**2 * t / 2)/beta
-            END DO
-c           -----------------------------------------------------------            
-c                 V(x) = t/(2α) x^(2α)
-c                 Monic potential
             ! DO i = 1, m
-            !       Ve = Ve + t/(2*a) * x(i)**(2*a)
+            !       Ve = Ve + (x(i)**4 / 4 + x(i)**2 * t / 2)/beta
             ! END DO
+c           -----------------------------------------------------------            
+c                 V(x) = t x^(2α)
+c                 Monic potential
+            DO i = 1, m
+                  Ve = Ve + (t * x(i)**(2*a))/(beta) 
+            END DO
 c           -----------------------------------------------------------            
 
             RETURN
