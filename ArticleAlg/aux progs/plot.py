@@ -2,12 +2,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from TracyWidom import TracyWidom
+import math
 
 #########################################################################
 
-# files = ['../Ensemble Data/b1N10.txt', '../Ensemble Data/b1N50.txt', '../Ensemble Data/b1N100.txt',
-#          '../Ensemble Data/b2N10.txt', '../Ensemble Data/b2N50.txt', '../Ensemble Data/b2N100.txt',
-#          '../GSE/n10.dat', '../Ensemble Data/b4N50.txt', '../Ensemble Data/b4N100.txt']
+# files = ['../Gaussian/b1N10.dat', '../Gaussian/b1N20.dat', '../Gaussian/b1N50.dat',
+#          '../Gaussian/b2N10.dat', '../Gaussian/b2N20.dat', '../Gaussian/b2N50.dat',
+#          '../Gaussian/b4N10.dat', '../Gaussian/b4N20.dat', '../Gaussian/b4N50.dat']
 
 # data = []
 
@@ -28,7 +29,7 @@ from TracyWidom import TracyWidom
 # fig, axs = plt.subplots(3, 3, sharey=True, tight_layout=True)
 
 # # title for the whole figure
-# fig.suptitle('Gaussian Ensembles - Density')
+# fig.suptitle('Ensembles Gaussianos - Densidade')
 
 # # for the first subplot
 # for i in range(3):
@@ -45,23 +46,29 @@ from TracyWidom import TracyWidom
 #         if j == 0:
 #             N = 10
 #         elif j == 1:
-#             N = 50
+#             N = 20
 #         else:
-#             N = 100
+#             N = 50
 
 #         axs[i, j].hist(data[3*i + j], bins=50, range=(-1.5, 1.5), density=True, color='gray')
 #         axs[i, j].set_title("beta = " + str(beta) + ", N = " + str(N))
-#         axs[i, j].set_xlabel("Value")
-#         axs[i, j].set_ylabel("Frequency")
 #         axs[i, j].set_xlim(-1.5, 1.5)
+
+# axs[1, 0].set_ylabel("Frequência")
+# axs[2, 1].set_xlabel("Posição")
         
 # # plot the semi-circle for the axs[0,2], axs[1,2] and axs[2,2]
 # x = np.linspace(-1.5, 1.5, 1000)
 # y = 2/np.pi * np.sqrt(1 - x**2)
 
-# axs[0, 2].plot(x, y, color='red')
-# axs[1, 2].plot(x, y, color='red')
-# axs[2, 2].plot(x, y, color='red')
+# axs[0, 2].plot(x, y, color='red', alpha=0.8,label='Wigner Semi-Circle')
+# axs[1, 2].plot(x, y, color='red',alpha=0.8, label='Wigner Semi-Circle')
+# axs[2, 2].plot(x, y, color='red', alpha=0.8,label='Wigner Semi-Circle')
+
+# # show labels
+# axs[0, 2].legend()
+# axs[1, 2].legend()
+# axs[2, 2].legend()
 
 #########################################################################
 
@@ -118,10 +125,10 @@ for file in files:
     data.append(dataaux)
 
 # were doing two subplots in one figure
-fig, axs = plt.subplots(len(files), 1, sharey=True, tight_layout=True)
+fig, axs = plt.subplots(5, 2, sharey=True, tight_layout=True)
 
 # title for the whole figure
-fig.suptitle('Quartic Potential - Density (N=50)')
+fig.suptitle('Potencial Quártico e Mônico - Densidade (N=50)')
 
 # for the first subplot
 for i in range(len(files)):
@@ -129,8 +136,8 @@ for i in range(len(files)):
 #    t = -1.0 - 0.5*i
     t = [-1, -1.5, -2, -2.5, -3][i]
 
-    axs[i].hist(data[i], bins=100, range=(-2.5, 2.5), density=True, color='gray')
-    axs[i].set_title("t = " + str(t))
+    axs[i][0].hist(data[i], bins=50, range=(-2.5, 2.5), density=True, color='gray')
+    axs[i][0].set_title("t = " + str(t))
 
     if i < 2:
         # plot theoretical distribution
@@ -141,7 +148,7 @@ for i in range(len(files)):
         x = np.linspace(-bt, bt, 1000)
         y = 1/(2*np.pi) * np.sqrt(bt**2 - x**2) * (x**2 + ct**2)
 
-        axs[i].plot(x, y, color='red', alpha=0.5)
+        axs[i][0].plot(x, y, color='red', alpha=0.5, label='Densidade Teórica')
 
     else:
         # plot theoretical distribution
@@ -153,66 +160,86 @@ for i in range(len(files)):
         y1 = np.abs(x1)/(2*np.pi) * np.sqrt((bt**2 - x1**2)*(x1**2 - at**2))
         y2 = np.abs(x2)/(2*np.pi) * np.sqrt((bt**2 - x2**2)*(x2**2 - at**2))
 
-        axs[i].plot(x1, y1, color='red', alpha=0.5)
-        axs[i].plot(x2, y2, color='red', alpha=0.5)
+        axs[i][0].plot(x1, y1, color='red', alpha=0.8, label='Densidade Teórica')
+        axs[i][0].plot(x2, y2, color='red', alpha=0.8)
 
-axs[2].set_ylabel("Frequency")
-axs[len(files)-1].set_xlabel("Value")
+    # label
+    axs[i][0].legend(loc = 'upper right')
+
+axs[2][0].set_ylabel("Frequencia")
+axs[len(files)-1][0].set_xlabel("Posição")
 
 
 #########################################################################
 
 #########################################################################
 
-# files = ['../Monic/M1.txt', '../Monic/M2.txt', '../Monic/M3.txt',
-#             '../Monic/M4.txt', '../Monic/M5.txt']
+files = ['../Monic/a1.dat', '../Monic/a2.dat', '../Monic/a3.dat',
+            '../Monic/a4.dat', '../Monic/a5.dat']
 
-# beta = 2
+beta = 2
+t = 1
 
-# data = []
+data = []
 
-# for file in files:
-#     dataaux = []
-#     with open(file) as f:
-#         for line in f:
-#             aux = line.split(" ")
-#             # filter empty string and \n
-#             aux = list(filter(lambda x: x != '\n' and x != '', aux))
-#             # make a list of floats
-#             aux = list(map(float, aux))
-#             for i in aux:
-#                 dataaux.append(i)
-#     data.append(dataaux)
+for file in files:
+    dataaux = []
+    with open(file) as f:
+        for line in f:
+            aux = line.split(" ")
+            # filter empty string and \n
+            aux = list(filter(lambda x: x != '\n' and x != '', aux))
+            # make a list of floats
+            aux = list(map(float, aux))
+            for i in aux:
+                dataaux.append(i)
+    data.append(dataaux)
 
-# # # were doing two subplots in one figure
-# # fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
+# # were doing two subplots in one figure
+# fig, axs = plt.subplots(5, 1, sharey=True, tight_layout=True)
 
-# # # title for the whole figure
-# # fig.suptitle('Monic Potential - Density (N=100)')
+# # title for the whole figure
+# fig.suptitle('Monic Potential - Density (N=100)')
 
-# # for the first subplot
-# for i in range(5):
+def h(x, alpha, a):
 
-#     alpha = i + 1
-#     axs[i][1].hist(data[i], bins=500, range=(-2.5, 2.5), density=True, color='gray')
-#     axs[i][1].set_title("alpha = " + str(alpha))
+    y = x**(2*alpha - 2)
 
-#     # plot horizontal line in a and -a
-#     a = 0.5
-#     for j in range(1,alpha):
-#         a = a * (2*j-1)/(2*j)
-#     a = a**(-1/(alpha))
+    for j in range(1,alpha):
 
-#     axs[i][1].axvline(x=a, color='red', alpha=0.5)
-#     axs[i][1].axvline(x=-a, color='red', alpha=0.5)
+        prod = 1
+        for l in range(1,j+1):
+            prod *= (2*l - 1)/(2*l)
 
-# axs[4][1].set_xlabel("Value")
+        y += x**(2*alpha-2-2*j) * a**(2*j) * prod
 
-# # plot the semi-circle in axs[0]
-# x = np.linspace(-2, 2, 1000)
-# y = 1/(2*np.pi) * np.sqrt(4 - x**2)
+    return y
 
-# axs[0][1].plot(x, y, color='blue', alpha=0.5)
+# for the first subplot
+for i in range(5):
+
+    alpha = i + 1
+    axs[i][1].hist(data[i], bins=50, range=(-2.5, 2.5), density=True, color='gray')
+    axs[i][1].set_title("m = " + str(alpha))
+
+    # plot horizontal line in a and -a
+    a = alpha
+    for j in range(1,alpha+1):
+        a = a * (2*j-1)/(2*j)
+    a = a**(-1/(2*alpha))
+
+    # plot theoretical
+    x = np.linspace(-a, a, 1000)
+    y = [0 for i in range(len(x))]
+    for value in range(len(x)):
+        if x[value]**2 - a**2 < 0:
+            y[value] = alpha/math.pi * math.sqrt(a**2 - x[value]**2) * h(x[value], alpha, a)
+
+    axs[i][1].plot(x, y, color='red', alpha=0.8, label='Densidade Teórica')
+    axs[i][1].legend(loc = 'upper right')
+
+axs[4][1].set_xlabel("Posição")
+
 
 #########################################################################
 
@@ -225,7 +252,7 @@ axs[len(files)-1].set_xlabel("Value")
 # N = 10
 
 # # We define the number of realizations
-# M = 100000
+# M = 10000
 
 # # Gaussian Orthogonal Ensemble
 # def GOE(N, escale = False):
@@ -316,14 +343,19 @@ axs[len(files)-1].set_xlabel("Value")
 # # plt.plot(x, TracyWidom(4).pdf(x), label='TW4', color='green')
 
 
-# axs[0,0].plot(x, density_GOE, color='blue', alpha=0.4)
-# axs[1,0].plot(x, density_GUE, color='blue', alpha=0.4)
-# axs[2,0].plot(x, density_GSE, color='blue', alpha=0.4)
+# axs[0,0].plot(x, density_GOE, color='blue', alpha=0.4, label='Matrix Model')
+# axs[1,0].plot(x, density_GUE, color='blue', alpha=0.4, label='Matrix Model')
+# axs[2,0].plot(x, density_GSE, color='blue', alpha=0.4, label='Matrix Model')
+
+# #legend
+# axs[0,0].legend()
+# axs[1,0].legend()
+# axs[2,0].legend()
 
 # # set axis limits
-# axs[0,0].set_xlim(-3, 3)
-# axs[1,0].set_xlim(-3, 3)
-# axs[2,0].set_xlim(-3, 3)
+# axs[0,0].set_xlim(-1.5, 1.5)
+# axs[1,0].set_xlim(-1.5, 1.5)
+# axs[2,0].set_xlim(-1.5, 1.5)
 
 #########################################################################
 
