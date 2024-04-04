@@ -75,6 +75,9 @@ C     niter: number of iterations to register, scalar
 C     p: acceptance probability, scalar
 C     t: coeficient of the external potential, scalar
 C     a: coeficient of the external potential, scalar
+C     Hi: Hamiltonian at k, scalar
+C     Hf: Hamiltonian at k+1, scalar
+C     accSteps: accepted steps, scalar
 C
 C     xk: position at k, vector of size (N,m)
 C     xtildek1: candidate positions for k+1, vector of size (N,m)
@@ -85,10 +88,10 @@ C     GH: gradient of Hamiltonian, vector of size (N,m)
 C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 C     GHold: gradient of Hamiltonian at k-1, vector of size (N,m)
-C     Hi: Hamiltonian at k, scalar
-C     Hf: Hamiltonian at k+1, scalar
 
-      PARAMETER (N = 50, m = 1, beta = 2.0, alpha = 0.1)
+      PARAMETER (N = 100, m = 1, beta = 2.0, alpha = 1.0)
+
+C#######################################################################
 
       DIMENSION xk(N,m), xtildek1(N,m),
      &      vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -98,16 +101,23 @@ C     Hf: Hamiltonian at k+1, scalar
       COMMON /V/ vk, vtilde, vtildek1
       COMMON /G/ GH, GHold, GVe, GW
       COMMON /Hk/ Hi, Hf
+      COMMON /r/ accSteps
+
+C#######################################################################
 
       Hi = 0.0
       Hf = 0.0
+      accSteps = 0.0
 
-      nsteps = 2000000
+      nsteps = 5000000
       niter = 1000
-      tstep = 0.1
-      gamma = 1.0
+      tstep = 0.01
+      gamma = 5.0
+
       t = 1.0
       a = 5.0
+
+C#######################################################################
 
       eta = EXP(-gamma * alpha * tstep)
       sdn = SQRT((1 - eta**2) / beta) / N
@@ -127,9 +137,14 @@ C     We also initialize xk = x0 and vk = v0
 C ---------------------------------------------------------------------
 
       OPEN(1,FILE='Monic/a5.dat',STATUS='UNKNOWN')
-      OPEN(2,FILE='dataV.txt',STATUS='UNKNOWN')
+      OPEN(2,FILE='./H.dat',STATUS='UNKNOWN')
+
+C ---------------------------------------------------------------------
 
       DO 10 k = 1, nsteps
+
+c     to ensure ergocity we need to pick randomly Dt
+      ttstep = tstep + 0.01*(RAND(0) - 0.5)
 
 C ---------------------------------------------------------------------
 C     Step 2: Update the velocities with
@@ -148,7 +163,7 @@ C
 C     Note that we update a half step of the velocities then we update
 C     the positions and then we update the velocities again
 
-      CALL L1_VERLET(tstep, alpha, beta, t, a)
+      CALL L1_VERLET(ttstep, alpha, beta, t, a)
 
 C ---------------------------------------------------------------------
 C     Step 4: define the acceptance probability
@@ -158,12 +173,13 @@ C     accept or reject the candidate with probability p
       CALL METROPOLIS(beta, t, a) 
 
 C ---------------------------------------------------------------------
-c     Save some data every 1000 steps
+c     Save some data every niter steps, after nsteps/2
       IF (MOD(k,niter) == 0) THEN
-            WRITE(*,*) k, XK(1,1), VK(1,1)
-            IF (k > nsteps/2) THEN
+            WRITE(*,*) k, XK(N,:), Hi, accSteps/k
+c            Hi, accSteps/k
+            IF (k > nsteps/5) THEN
                   WRITE(1,*) xk
-                  WRITE(2,*) vk
+                  WRITE(2,*) Hi
             END IF
       END IF
 
@@ -183,10 +199,10 @@ C     Subroutines:
 C     INIT: initialization of (x0, v0)
 c           modifies xk, vk, GH
       SUBROUTINE INIT()
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
-     &                vk(N,m),vtilde(N,m),vtildek1(N,m),
+     &                vk(N,m), vtilde(N,m), vtildek1(N,m),
      &                GH(N,m), GHold(N, m), GVe(m), GW(m)
             COMMON /X/ xk, xtildek1
             COMMON /V/ vk, vtilde, vtildek1
@@ -207,7 +223,7 @@ c           modifies xk, vk, GH
 C     L2_ORNSUHLEN: update the velocities with the gaussian variable
 c           modifies vtilde
       SUBROUTINE L2_ORNSUHLEN(eta, sdn, pi)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
@@ -223,7 +239,7 @@ c           modifies vtilde
 C     L1_VERLET: update the positions and velocities
 c           modifies xtildek1 and vtildek1
       SUBROUTINE L1_VERLET(tstep, alpha, beta, t, a)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -249,7 +265,7 @@ c           modifies xtildek1 and vtildek1
 C     GRAD_H: gradient of the Hamiltonian (force)
 c           modifies GH, GVe and GW
       SUBROUTINE GRAD_H(beta, t, a)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                GH_aux(N,N,m), GH(N,m), GHold(N, m), GVe(m), GW(m)
@@ -259,7 +275,7 @@ c           modifies GH, GVe and GW
             DO i = 1, N
                   DO j = 1, i-1
                         CALL GRAD_W(xtildek1(i,:), xtildek1(j,:))
-                        GH_aux(i,j,:) = - GW
+                        GH_aux(i,j,:) = - GW(:)
                   END DO
             END DO
 
@@ -278,7 +294,7 @@ c           modifies GH, GVe and GW
                   GH(i,:) = GH(i,:) / N 
 
                   CALL GRAD_Ve(xtildek1(i,:), beta, t, a)
-                  GH(i,:) = GH(i,:) - GVe
+                  GH(i,:) = GH(i,:) - GVe(:)
 
                   GH(i,:) = GH(i,:) / N
 
@@ -289,7 +305,7 @@ c           modifies GH, GVe and GW
 C     GRAD_Ve: gradient of the external potential
 c           modifies GVe
       SUBROUTINE GRAD_Ve(x, beta, t, a)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), GH(N,m), GHold(N, m), GVe(m), GW(m)
             COMMON /G/ GH, GHold, GVe, GW
@@ -309,16 +325,40 @@ c           -----------------------------------------------------------
 c                 Gradient of V(x) = t x^(2α)
 c                 Monic potential
             DO i = 1, m
-                   GVe(i) = GVe(i) +  (2*a*t * x(i)**(2*a-1)) / beta
+                   GVe(i) = GVe(i) + (2*a*t * x(i)**(2*a-1)) / beta
             END DO
 c           -----------------------------------------------------------
 
+            ! CALL NUMERICAL_GRAD_Ve(x, beta, t, a)
+
       END SUBROUTINE GRAD_Ve
+
+C     NUMERICAL_GRAD_Ve: numerical gradient of the external potential
+c           modifies GVe
+      SUBROUTINE NUMERICAL_GRAD_Ve(x, beta, t, a)
+            PARAMETER(N = 100, m = 1)
+            IMPLICIT REAL*8 (A-H,O-Z)
+            DIMENSION x(m), GH(N,m), GHold(N, m), GVe(m), GW(m),
+     +               x1(m), x2(m)
+            COMMON /G/ GH, GHold, GVe, GW
+
+            eps = 1e-6
+
+            DO i = 1, m
+                  x1 = x
+                  x1(i) = x1(i) + eps
+                  x2 = x
+                  x2(i) = x2(i) - eps
+
+            GVe(i) = GVe(i) + (Ve(x1,beta,t,a)-Ve(x2,beta,t,a)) /(2*eps)
+            END DO
+
+      END SUBROUTINE NUMERICAL_GRAD_Ve
 
 C     GRAD_W: gradient of the interaction potential
 c           modifies GW
       SUBROUTINE GRAD_W(x, y)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m), v(m),
      &                GH(N,m), GHold(N,m), GW(m), GVe(m)
@@ -336,18 +376,22 @@ c          -----------------------------------------------------------
 C     METROPOLIS: define the acceptance probability
 c           modifies xk, vk
       SUBROUTINE METROPOLIS(beta, t, a)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m),vtilde(N,m),vtildek1(N,m)
+            COMMON /Hk/ Hi, Hf
             COMMON /X/ xk, xtildek1
             COMMON /V/ vk, vtilde, vtildek1
+            COMMON /r/ accSteps
 
             p = PROBLOG(beta, t, a)
             
             IF (LOG(RAND(0)) <= p) THEN
                   xk = xtildek1
                   vk = vtildek1
+                  Hi = Hf
+                  accSteps = accSteps + 1
             ELSE
                   vk = -vtildek1
                   GH = GHold
@@ -386,7 +430,7 @@ c           return a standard gaussian variable, scalar
 C     (1-FUNCTION) PROBLOG: calculate the log of acceptance probability
 c           return the log of acceptance probability, scalar
       FUNCTION PROBLOG(beta, t, a)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
@@ -394,16 +438,14 @@ c           return the log of acceptance probability, scalar
 
             Hf = H(.TRUE.,beta, t, a)
 
-            PROBLOG = -beta * (Hf-Hi)
+            PROBLOG = - beta * ABS(Hf-Hi)
 
             DO i = 1, N
 C                 Energia cinética
                   aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
                   aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
-                  PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
+                  PROBLOG = PROBLOG - beta * ABS(aux_Kf - aux_Ki)/2
             END DO
-
-            Hi = Hf
        
             RETURN 
             END FUNCTION PROBLOG
@@ -411,7 +453,7 @@ C                 Energia cinética
 C     (3-FUNCTION) H: Hamiltonian
 c           return the Hamiltonian, scalar
       FUNCTION H(next, beta, t, a)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             LOGICAL next
             DIMENSION x(N,m), xk(N,m), xtildek1(N,m)
@@ -428,7 +470,7 @@ c           return the Hamiltonian, scalar
             DO i = 1, N
                   H = H + Ve(x(i,:), beta, t, a)
                   DO j = i+1, N
-                        H = H + W(x(i,:), x(j,:)) / (2*N)
+                        H = H + W(x(i,:), x(j,:)) / N
                   END DO
             END DO
 
@@ -440,9 +482,11 @@ c           return the Hamiltonian, scalar
 C     (3-FUNCTION) Ve: external potential
 c           return the external potential, scalar
       FUNCTION Ve(x, beta, t, a)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m)
+            Ve = 0.0
+            ! COMPLEX*16 Xc
 
 c           -----------------------------------------------------------            
 c                 V(x) = ||x||^2 / (2 * beta)
@@ -460,7 +504,12 @@ c                 Monic potential
             DO i = 1, m
                   Ve = Ve + (t * x(i)**(2*a))/(beta) 
             END DO
-c           -----------------------------------------------------------            
+c           ----------------------------------------------------------- 
+c                 V(z) = ||z||^2a - Re(t z^a)
+c                 Complex potential
+            ! Xc = CMPLX(x(1), x(2), KIND=16)
+            ! Ve = ABS(Xc)**(2*a) - t*REAL(Xc**a)
+c           -----------------------------------------------------------
 
             RETURN
       END FUNCTION Ve
@@ -468,7 +517,7 @@ c           -----------------------------------------------------------
 C     (3-FUNCTION) W: interaction potential
 c           return the interaction potential, scalar
       FUNCTION W(x, y)
-            PARAMETER(N = 50, m = 1)
+            PARAMETER(N = 100, m = 1)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m)
 
