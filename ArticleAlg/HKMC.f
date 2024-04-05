@@ -111,8 +111,8 @@ C#######################################################################
 
       nsteps = 5000000
       niter = 1000
-      tstep = 0.01
-      gamma = 5.0
+      tstep = 0.5
+      gamma = 1.0
 
       t = 1.0
       a = 5.0
@@ -136,7 +136,7 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='Monic/a5.dat',STATUS='UNKNOWN')
+      OPEN(1,FILE='LogZnb/Hb2N100.dat',STATUS='UNKNOWN')
       OPEN(2,FILE='./H.dat',STATUS='UNKNOWN')
 
 C ---------------------------------------------------------------------
@@ -178,8 +178,8 @@ c     Save some data every niter steps, after nsteps/2
             WRITE(*,*) k, XK(N,:), Hi, accSteps/k
 c            Hi, accSteps/k
             IF (k > nsteps/5) THEN
-                  WRITE(1,*) xk
-                  WRITE(2,*) Hi
+                  WRITE(1,*) Hi
+                  WRITE(2,*) xk
             END IF
       END IF
 
@@ -314,7 +314,7 @@ c           modifies GVe
 c           -----------------------------------------------------------
 c                 Gradient of V(x) = ||x||^2 / (2 * beta) Beta - Hermite
 c                 Quadratic potential
-            ! GVe = x / beta
+            GVe = x / beta
 c           -----------------------------------------------------------
 c                 Gradient of V(x) = 1/4 x^4 + 1/2 x^2 t
 c                 Quartic potential
@@ -324,9 +324,9 @@ c                 Quartic potential
 c           -----------------------------------------------------------
 c                 Gradient of V(x) = t x^(2α)
 c                 Monic potential
-            DO i = 1, m
-                   GVe(i) = GVe(i) + (2*a*t * x(i)**(2*a-1)) / beta
-            END DO
+            ! DO i = 1, m
+            !        GVe(i) = GVe(i) + (2*a*t * x(i)**(2*a-1)) / beta
+            ! END DO
 c           -----------------------------------------------------------
 
             ! CALL NUMERICAL_GRAD_Ve(x, beta, t, a)
@@ -438,13 +438,13 @@ c           return the log of acceptance probability, scalar
 
             Hf = H(.TRUE.,beta, t, a)
 
-            PROBLOG = - beta * ABS(Hf-Hi)
+            PROBLOG = - beta * (Hf-Hi)
 
             DO i = 1, N
 C                 Energia cinética
                   aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
                   aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
-                  PROBLOG = PROBLOG - beta * ABS(aux_Kf - aux_Ki)/2
+                  PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
             END DO
        
             RETURN 
@@ -491,7 +491,7 @@ c           return the external potential, scalar
 c           -----------------------------------------------------------            
 c                 V(x) = ||x||^2 / (2 * beta)
 c                 Quadratic potential
-            ! Ve = DOT_PRODUCT(x,x) / (2*beta)
+            Ve = DOT_PRODUCT(x,x) / (2*beta)
 c           -----------------------------------------------------------            
 c                 V(x) = 1/4 x^4 + 1/2 x^2 t
 c                 Quartic potential
@@ -501,9 +501,9 @@ c                 Quartic potential
 c           -----------------------------------------------------------            
 c                 V(x) = t x^(2α)
 c                 Monic potential
-            DO i = 1, m
-                  Ve = Ve + (t * x(i)**(2*a))/(beta) 
-            END DO
+            ! DO i = 1, m
+            !       Ve = Ve + (t * x(i)**(2*a))/(beta) 
+            ! END DO
 c           ----------------------------------------------------------- 
 c                 V(z) = ||z||^2a - Re(t z^a)
 c                 Complex potential
