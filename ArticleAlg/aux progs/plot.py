@@ -542,7 +542,7 @@ with open(file) as f:
         # make a list of floats
         aux = list(map(float, aux))
         for i in aux:
-            i = 1 if i > 1 else i
+            # i = 1 if i > 1 else i
             dataV.append(i)
 
 # reshape data

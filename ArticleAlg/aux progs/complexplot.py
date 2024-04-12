@@ -40,7 +40,7 @@ plt.gca().set_aspect('equal')
 # #heatmap 2d greyscale
 
 #grid
-l = 1.5
+l = 10
 s = 500
 
 for i in range(3):
@@ -52,7 +52,8 @@ for i in range(3):
             part = adata[k]
             coordx = int((part.real + l) / (2 * l) * s)
             coordy = int((part.imag + l) / (2 * l) * s)
-            Z[coordy, coordx] += 1
+            if abs(coordx) < s and abs(coordy) < s:
+                Z[coordy, coordx] += 1
 
         #normalize
         Z = Z / np.sum(Z)
@@ -64,7 +65,8 @@ for k in range(len(adata)):
     part = adata[k]
     coordx = int((part.real + l) / (2 * l) * s)
     coordy = int((part.imag + l) / (2 * l) * s)
-    Z[coordy, coordx] += 1
+    if abs(coordx) < s and abs(coordy) < s:
+        Z[coordy, coordx] += 1
 
 #normalize
 Z = Z / np.sum(Z)

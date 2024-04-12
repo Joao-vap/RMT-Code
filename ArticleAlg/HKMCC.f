@@ -109,14 +109,13 @@ C#######################################################################
       Hf = 0.0
       accSteps = 0.0
 
-      nsteps = 2000000
+      nsteps = 1000000
       niter = 500
-      tstep = 0.5
-      gamma = 1.0
+      tstep = 0.1
+      gamma = 5.0
 
-      t = 2.0
-      a = 2.0
-
+      t = 0.15
+      a = 0.0
 C#######################################################################
 
       eta = EXP(-gamma * alpha * tstep)
@@ -136,7 +135,7 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='Complex/a2t2.dat',STATUS='UNKNOWN')
+      OPEN(1,FILE='Complex/testa02t04.dat',STATUS='UNKNOWN')
       OPEN(2,FILE='./H.dat',STATUS='UNKNOWN')
 
 C ---------------------------------------------------------------------
@@ -211,7 +210,7 @@ c           modifies xk, vk, GH
             DO i = 1, N
             DO j = 1, m
 
-                  xk(i,j) = -1.0 + 2*RAND(0)
+                  xk(i,j) = -0.05 + 0.1*RAND(0)
                   vk(i,j) = 0.0
                   GH(i,j) = 0.0                  
 
@@ -332,15 +331,15 @@ c           -----------------------------------------------------------
 c                 Gradient of V(z) = ||z||^2a - Re(t z^a)
 c                 Complex potential
 
-            Xc = CMPLX(x(1), x(2), KIND=16)
-            Xcc = CONJG(Xc)
-            VGVe = (2*a*(Xc*Xcc)**(a-1)*Xc + t*a*Xcc**(a-1)) / beta
-            GVe(1) = REAL(VGVe, KIND=8)
-            GVe(2) = AIMAG(VGVe)
+            ! Xc = CMPLX(x(1), x(2), KIND=16)
+            ! Xcc = CONJG(Xc)
+            ! VGVe = (2*a*(Xc*Xcc)**(a-1)*Xc + t*a*Xcc**(a-1)) / beta
+            ! GVe(1) = REAL(VGVe, KIND=8)
+            ! GVe(2) = AIMAG(VGVe)
 
 c           -----------------------------------------------------------
 
-            ! CALL NUMERICAL_GRAD_Ve(x, beta, t, a)
+            CALL NUMERICAL_GRAD_Ve(x, beta, t, a)
 
       END SUBROUTINE GRAD_Ve
 
@@ -520,7 +519,8 @@ c           -----------------------------------------------------------
 c                 V(z) = ||z||^2a - Re(t z^a)
 c                 Complex potential
             Xc = CMPLX(x(1), x(2), KIND=16)
-            Ve = ABS(Xc)**(2*a) - t*REAL(Xc**a)
+            Ve = 1/t*(ABS(Xc)**(2)-2*REAL(Xc**(3)/(3)+a*Xc, KIND=8))
+
 c           -----------------------------------------------------------
 
             RETURN
