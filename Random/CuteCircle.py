@@ -6,7 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 msize = 150
-ts = 1000
+ts = 100
 
 def Mod_GUE(M1, M2, t):
     # We generate a random matrix
@@ -35,7 +35,7 @@ colors = plt.cm.RdBu(np.linspace(0,1,ts))
 # plot the eigenvalues for each time with colorcode
 for i in range(ts):
     print(i)
-    plt.scatter(eig[i].real, eig[i].imag, color=colors[i], s=1)
+    plt.scatter(eig[i].real, eig[i].imag, color='black', s=5)
     # for x,y in zip(eig[i].real, eig[i].imag):
     #     plt.scatter(x,y, color=colors[i], s=0.1)
 
@@ -48,8 +48,8 @@ plt.axis('off')
 # save the plot with high resolution
 plt.savefig('CuteCircleWhite2.png')
 
-# black background
-plt.style.use('dark_background')
+# # black background
+# plt.style.use('dark_background')
 
 # save the plot
 plt.savefig('CuteCircleBlack2.png')

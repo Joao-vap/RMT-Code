@@ -109,12 +109,12 @@ C#######################################################################
       Hf = 0.0
       accSteps = 0.0
 
-      nsteps = 1000000
+      nsteps = 2000000
       niter = 500
       tstep = 0.1
-      gamma = 5.0
+      gamma = 1.0
 
-      t = 0.15
+      t = 0.27
       a = 0.0
 C#######################################################################
 
@@ -135,7 +135,7 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='Complex/testa02t04.dat',STATUS='UNKNOWN')
+      OPEN(1,FILE='Complex/a00t027.dat',STATUS='UNKNOWN')
       OPEN(2,FILE='./H.dat',STATUS='UNKNOWN')
 
 C ---------------------------------------------------------------------
@@ -176,7 +176,7 @@ c     Save some data every niter steps, after nsteps/2
       IF (MOD(k,niter) == 0) THEN
             WRITE(*,*) k, XK(N,:), Hi, accSteps/k
 c            Hi, accSteps/k
-            IF (k > nsteps/5) THEN
+            IF (k > nsteps/10) THEN
                   WRITE(1,*) xk
                   WRITE(2,*) Hi
             END IF
@@ -448,14 +448,14 @@ c           return the log of acceptance probability, scalar
 
             Hf = H(.TRUE.,beta, t, a)
 
-            PROBLOG = - beta * (Hf-Hi)
+            PROBLOG = - beta * (Hf-Hi) * N**2
 
-            DO i = 1, N
-C                 Energia cinética
-                  aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
-                  aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
-                  PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
-            END DO
+!             DO i = 1, N
+! C                 Energia cinética
+!                   aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
+!                   aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
+!                   PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
+!             END DO
        
             RETURN 
             END FUNCTION PROBLOG
@@ -519,7 +519,12 @@ c           -----------------------------------------------------------
 c                 V(z) = ||z||^2a - Re(t z^a)
 c                 Complex potential
             Xc = CMPLX(x(1), x(2), KIND=16)
-            Ve = 1/t*(ABS(Xc)**(2)-2*REAL(Xc**(3)/(3)+a*Xc, KIND=8))
+            IF (ABS(Xc) > 1) THEN
+                  Ve = ABS(Xc)
+            ELSE 
+                  Ve=1/t*(ABS(Xc)**(2)-2*REAL(Xc**(3)/(3)+a*Xc, KIND=8))
+            END IF
+            
 
 c           -----------------------------------------------------------
 

@@ -89,7 +89,7 @@ C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 C     GHold: gradient of Hamiltonian at k-1, vector of size (N,m)
 
-      PARAMETER (N = 100, m = 1, beta = 2.0, alpha = 1.0)
+      PARAMETER (N = 100, m = 1, beta = 4.0, alpha = 1.0)
 
 C#######################################################################
 
@@ -110,9 +110,9 @@ C#######################################################################
       accSteps = 0.0
 
       nsteps = 5000000
-      niter = 1000
+      niter = 500
       tstep = 0.5
-      gamma = 1.0
+      gamma = 0.05
 
       t = 1.0
       a = 5.0
@@ -136,7 +136,7 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='LogZnb/Hb2N100.dat',STATUS='UNKNOWN')
+      OPEN(1,FILE='Gaussian/b4N100.dat',STATUS='UNKNOWN')
       OPEN(2,FILE='./H.dat',STATUS='UNKNOWN')
 
 C ---------------------------------------------------------------------
@@ -178,8 +178,8 @@ c     Save some data every niter steps, after nsteps/2
             WRITE(*,*) k, XK(N,:), Hi, accSteps/k
 c            Hi, accSteps/k
             IF (k > nsteps/5) THEN
-                  WRITE(1,*) Hi
-                  WRITE(2,*) xk
+                  WRITE(1,*) xk
+                  WRITE(2,*) Hi
             END IF
       END IF
 
@@ -438,14 +438,14 @@ c           return the log of acceptance probability, scalar
 
             Hf = H(.TRUE.,beta, t, a)
 
-            PROBLOG = - beta * (Hf-Hi)
+            PROBLOG = - beta * (Hf-Hi) * N**2
 
-            DO i = 1, N
-C                 Energia cinética
-                  aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
-                  aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
-                  PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
-            END DO
+!             DO i = 1, N
+! C                 Energia cinética
+!                   aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
+!                   aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
+!                   PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
+!             END DO
        
             RETURN 
             END FUNCTION PROBLOG

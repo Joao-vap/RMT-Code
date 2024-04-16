@@ -1,6 +1,6 @@
 import numpy as np
 
-n_particles = 100
+n_particles = 20
 n_groups = 1
 steps = 100
 
@@ -74,7 +74,9 @@ plt.figure(figsize=(10,10))
 # remove axis
 plt.axis('off')
 
-plt.plot(Memory)
+
+# choose dark blue as color
+plt.plot(Memory, color = 'black', alpha = 0.5)
 plt.show()
 
 
