@@ -89,7 +89,7 @@ C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 C     GHold: gradient of Hamiltonian at k-1, vector of size (N,m)
 
-      PARAMETER (N = 100, m = 1, beta = 4.0, alpha = 1.0)
+      PARAMETER (N = 100, m = 1, beta = 2.0, alpha = 1.0)
 
 C#######################################################################
 
@@ -111,8 +111,8 @@ C#######################################################################
 
       nsteps = 5000000
       niter = 500
-      tstep = 0.5
-      gamma = 0.05
+      tstep = 0.1
+      gamma = 3.0
 
       t = 1.0
       a = 5.0
@@ -136,7 +136,7 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='Gaussian/b4N100.dat',STATUS='UNKNOWN')
+      OPEN(1,FILE='Gaussian/b2N100.dat',STATUS='UNKNOWN')
       OPEN(2,FILE='./H.dat',STATUS='UNKNOWN')
 
 C ---------------------------------------------------------------------
@@ -386,8 +386,10 @@ c           modifies xk, vk
             COMMON /r/ accSteps
 
             p = PROBLOG(beta, t, a)
+
+            r = LOG(RAND(0))
             
-            IF (LOG(RAND(0)) <= p) THEN
+            IF (r <= p) THEN
                   xk = xtildek1
                   vk = vtildek1
                   Hi = Hf
@@ -436,16 +438,18 @@ c           return the log of acceptance probability, scalar
             COMMON /V/ vk, vtilde, vtildek1
             COMMON /Hk/ Hi, Hf
 
+            betaN = beta * N**2
+
             Hf = H(.TRUE.,beta, t, a)
 
-            PROBLOG = - beta * (Hf-Hi) * N**2
+            PROBLOG = - beta * (Hf-Hi)
 
-!             DO i = 1, N
-! C                 Energia cinética
-!                   aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
-!                   aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
-!                   PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
-!             END DO
+            DO i = 1, N
+C                 Energia cinética
+                  aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
+                  aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
+                  PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
+            END DO
        
             RETURN 
             END FUNCTION PROBLOG
@@ -531,3 +535,7 @@ c           -----------------------------------------------------------
       END FUNCTION W
 
 C#######################################################################
+
+
+
+

@@ -138,7 +138,7 @@ axs[2, 2].legend()
 N = 10
 
 # We define the number of realizations
-M = 4000
+M = 1000
 
 # Gaussian Orthogonal Ensemble
 def GOE(N, escale = False):

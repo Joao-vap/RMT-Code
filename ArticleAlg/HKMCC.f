@@ -89,7 +89,7 @@ C     GVe: gradient of the external potential, vector of size (m)
 C     GW: gradient of the interaction potential, vector of size (m)
 C     GHold: gradient of Hamiltonian at k-1, vector of size (N,m)
 
-      PARAMETER (N = 100, m = 2, beta = 2.0, alpha = 1.0)
+      PARAMETER (N = 300, m = 2, beta = 2.0, alpha = 1.0)
 
 C#######################################################################
 
@@ -114,7 +114,7 @@ C#######################################################################
       tstep = 0.1
       gamma = 1.0
 
-      t = 0.27
+      t = 0.19
       a = 0.0
 C#######################################################################
 
@@ -135,7 +135,7 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='Complex/a00t027.dat',STATUS='UNKNOWN')
+      OPEN(1,FILE='Complex/a00t019.dat',STATUS='UNKNOWN')
       OPEN(2,FILE='./H.dat',STATUS='UNKNOWN')
 
 C ---------------------------------------------------------------------
@@ -198,7 +198,7 @@ C     Subroutines:
 C     INIT: initialization of (x0, v0)
 c           modifies xk, vk, GH
       SUBROUTINE INIT()
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m), vtilde(N,m), vtildek1(N,m),
@@ -222,7 +222,7 @@ c           modifies xk, vk, GH
 C     L2_ORNSUHLEN: update the velocities with the gaussian variable
 c           modifies vtilde
       SUBROUTINE L2_ORNSUHLEN(eta, sdn, pi)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
@@ -238,7 +238,7 @@ c           modifies vtilde
 C     L1_VERLET: update the positions and velocities
 c           modifies xtildek1 and vtildek1
       SUBROUTINE L1_VERLET(tstep, alpha, beta, t, a)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m),vtilde(N,m),vtildek1(N,m),
@@ -264,7 +264,7 @@ c           modifies xtildek1 and vtildek1
 C     GRAD_H: gradient of the Hamiltonian (force)
 c           modifies GH, GVe and GW
       SUBROUTINE GRAD_H(beta, t, a)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                GH_aux(N,N,m), GH(N,m), GHold(N, m), GVe(m), GW(m)
@@ -304,7 +304,7 @@ c           modifies GH, GVe and GW
 C     GRAD_Ve: gradient of the external potential
 c           modifies GVe
       SUBROUTINE GRAD_Ve(x, beta, t, a)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), GH(N,m), GHold(N, m), GVe(m), GW(m)
             COMPLEX*16 Xc, Xcc, VGVe
@@ -346,7 +346,7 @@ c           -----------------------------------------------------------
 C     NUMERICAL_GRAD_Ve: numerical gradient of the external potential
 c           modifies GVe
       SUBROUTINE NUMERICAL_GRAD_Ve(x, beta, t, a)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), GH(N,m), GHold(N, m), GVe(m), GW(m),
      +               x1(m), x2(m)
@@ -368,7 +368,7 @@ c           modifies GVe
 C     GRAD_W: gradient of the interaction potential
 c           modifies GW
       SUBROUTINE GRAD_W(x, y)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m), v(m),
      &                GH(N,m), GHold(N,m), GW(m), GVe(m)
@@ -386,7 +386,7 @@ c          -----------------------------------------------------------
 C     METROPOLIS: define the acceptance probability
 c           modifies xk, vk
       SUBROUTINE METROPOLIS(beta, t, a)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION xk(N,m), xtildek1(N,m),
      &                vk(N,m),vtilde(N,m),vtildek1(N,m)
@@ -440,7 +440,7 @@ c           return a standard gaussian variable, scalar
 C     (1-FUNCTION) PROBLOG: calculate the log of acceptance probability
 c           return the log of acceptance probability, scalar
       FUNCTION PROBLOG(beta, t, a)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION vk(N,m),vtilde(N,m),vtildek1(N,m)
             COMMON /V/ vk, vtilde, vtildek1
@@ -463,7 +463,7 @@ c           return the log of acceptance probability, scalar
 C     (3-FUNCTION) H: Hamiltonian
 c           return the Hamiltonian, scalar
       FUNCTION H(next, beta, t, a)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             LOGICAL next
             DIMENSION x(N,m), xk(N,m), xtildek1(N,m)
@@ -492,7 +492,7 @@ c           return the Hamiltonian, scalar
 C     (3-FUNCTION) Ve: external potential
 c           return the external potential, scalar
       FUNCTION Ve(x, beta, t, a)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m)
             COMPLEX*16 Xc
@@ -534,7 +534,7 @@ c           -----------------------------------------------------------
 C     (3-FUNCTION) W: interaction potential
 c           return the interaction potential, scalar
       FUNCTION W(x, y)
-            PARAMETER(N = 100, m = 2)
+            PARAMETER(N = 300, m = 2)
             IMPLICIT REAL*8 (A-H,O-Z)
             DIMENSION x(m), y(m)
 

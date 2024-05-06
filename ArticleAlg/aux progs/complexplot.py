@@ -4,10 +4,12 @@ import seaborn as sns
 
 #plot two dimensional data
 
-files = ['../Complex/a5t0.dat', '../Complex/a5t05.dat', '../Complex/a5t1.dat', '../Complex/a5t2.dat',
-         '../Complex/a3t0.dat', '../Complex/a3t05.dat', '../Complex/a3t1.dat', '../Complex/a3t2.dat', 
-         '../Complex/a2t0.dat', '../Complex/a2t05.dat', '../Complex/a2t1.dat', '../Complex/a2t2.dat',
-         '../Complex/a1t0.dat']
+# files = ['../Complex/a5t0.dat', '../Complex/a5t05.dat', '../Complex/a5t1.dat', '../Complex/a5t2.dat',
+#          '../Complex/a3t0.dat', '../Complex/a3t05.dat', '../Complex/a3t1.dat', '../Complex/a3t2.dat', 
+#          '../Complex/a2t0.dat', '../Complex/a2t05.dat', '../Complex/a2t1.dat', '../Complex/a2t2.dat',
+#          '../Complex/a1t0.dat']
+
+files = [ '../Complex/a3t05.dat']
 
 data = []
 
@@ -29,37 +31,12 @@ for file in files:
                 dataaux.append(complex(aux[0, i], aux[1, i]))
     data.append(dataaux)
 
-# plot two dimensional data
-fig, ax = plt.subplots(3, 5, tight_layout=True)
-# set proportion
-plt.gca().set_aspect('equal')
 
-# scatter
-# ax.scatter([i.real for i in data[0]], [i.imag for i in data[0]], color='grey', s=1)
-
-# #heatmap 2d greyscale
-
+fig, ax = plt.subplots(1, 1, tight_layout=True)
 #grid
-l = 10
+l = 1
 s = 500
-
-for i in range(3):
-    for t in range(1,5):
-        print(i, t)
-        adata = data[i*4 + t - 1]
-        Z = np.zeros((s, s))
-        for k in range(len(adata)):
-            part = adata[k]
-            coordx = int((part.real + l) / (2 * l) * s)
-            coordy = int((part.imag + l) / (2 * l) * s)
-            if abs(coordx) < s and abs(coordy) < s:
-                Z[coordy, coordx] += 1
-
-        #normalize
-        Z = Z / np.sum(Z)
-        ax[i, t].imshow(1 - Z, cmap='gray', interpolation='nearest')
-
-adata = data[12]
+adata = data[0]
 Z = np.zeros((s, s))
 for k in range(len(adata)):
     part = adata[k]
@@ -70,27 +47,73 @@ for k in range(len(adata)):
 
 #normalize
 Z = Z / np.sum(Z)
-ax[1, 0].imshow(1 - Z, cmap='gray', interpolation='nearest')
-
-#turn off axis
-for i in range(3):
-    for j in range(5):
-        ax[i, j].axis('off')
-
-ax[0, 1].set_title('t = 0')
-ax[0, 2].set_title('t = 0.5')
-ax[0, 3].set_title('t = 1')
-ax[0, 4].set_title('t = 2')
-
-ax[1, 0].set_title('t = 0')
-
-# ax[0,1].set_ylabel('a = 5')
-# ax[1,1].set_ylabel('a = 3')
-# ax[2,1].set_ylabel('a = 2')
-# ax[3,1].set_ylabel('a = 1')
-
-# ax[]
-
-plt.savefig('complexplot.png')
-
+ax.imshow(1 - Z, cmap='gray', interpolation='nearest')
+# axis off
+ax.axis('off')
 plt.show()
+
+# # plot two dimensional data
+# fig, ax = plt.subplots(3, 5, tight_layout=True)
+# # set proportion
+# plt.gca().set_aspect('equal')
+
+#scatter
+# ax.scatter([i.real for i in data[0]], [i.imag for i in data[0]], color='grey', s=1)
+
+# # #heatmap 2d greyscale
+
+# #grid
+# l = 10
+# s = 500
+
+# for i in range(3):
+#     for t in range(1,5):
+#         print(i, t)
+#         adata = data[i*4 + t - 1]
+#         Z = np.zeros((s, s))
+#         for k in range(len(adata)):
+#             part = adata[k]
+#             coordx = int((part.real + l) / (2 * l) * s)
+#             coordy = int((part.imag + l) / (2 * l) * s)
+#             if abs(coordx) < s and abs(coordy) < s:
+#                 Z[coordy, coordx] += 1
+
+#         #normalize
+#         Z = Z / np.sum(Z)
+#         ax[i, t].imshow(1 - Z, cmap='gray', interpolation='nearest')
+
+# adata = data[12]
+# Z = np.zeros((s, s))
+# for k in range(len(adata)):
+#     part = adata[k]
+#     coordx = int((part.real + l) / (2 * l) * s)
+#     coordy = int((part.imag + l) / (2 * l) * s)
+#     if abs(coordx) < s and abs(coordy) < s:
+#         Z[coordy, coordx] += 1
+
+# #normalize
+# Z = Z / np.sum(Z)
+# ax[1, 0].imshow(1 - Z, cmap='gray', interpolation='nearest')
+
+# #turn off axis
+# for i in range(3):
+#     for j in range(5):
+#         ax[i, j].axis('off')
+
+# ax[0, 1].set_title('t = 0')
+# ax[0, 2].set_title('t = 0.5')
+# ax[0, 3].set_title('t = 1')
+# ax[0, 4].set_title('t = 2')
+
+# ax[1, 0].set_title('t = 0')
+
+# # ax[0,1].set_ylabel('a = 5')
+# # ax[1,1].set_ylabel('a = 3')
+# # ax[2,1].set_ylabel('a = 2')
+# # ax[3,1].set_ylabel('a = 1')
+
+# # ax[]
+
+# plt.savefig('complexplot.png')
+
+# plt.show()
