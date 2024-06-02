@@ -110,9 +110,9 @@ C#######################################################################
       accSteps = 0.0
 
       nsteps = 5000000
-      niter = 500
-      tstep = 0.1
-      gamma = 1.0
+      niter = 100
+      tstep = 0.1 * beta
+      gamma = 0.1
 
       t = 1.0
       a = 5.0
@@ -136,7 +136,7 @@ C     We also initialize xk = x0 and vk = v0
 
 C ---------------------------------------------------------------------
 
-      OPEN(1,FILE='Gaussian/bN2N100.dat',STATUS='UNKNOWN')
+      OPEN(1,FILE='Gaussian/tb2N100.dat',STATUS='UNKNOWN')
       OPEN(2,FILE='./H.dat',STATUS='UNKNOWN')
 
 C ---------------------------------------------------------------------
@@ -175,11 +175,11 @@ C     accept or reject the candidate with probability p
 C ---------------------------------------------------------------------
 c     Save some data every niter steps, after nsteps/2
       IF (MOD(k,niter) == 0) THEN
-            WRITE(*,*) k, XK(N,:), Hi, accSteps/k
+            WRITE(*,*) k, Hi, accSteps/k
 c            Hi, accSteps/k
             IF (k > nsteps/10) THEN
                   WRITE(1,*) xk
-                  WRITE(2,*) Hi
+c                 WRITE(2,*) Hi
             END IF
       END IF
 
@@ -386,7 +386,6 @@ c           modifies xk, vk
             COMMON /r/ accSteps
 
             p = PROBLOG(beta, t, a)
-
             r = LOG(RAND(0))
             
             IF (r <= p) THEN
@@ -395,7 +394,7 @@ c           modifies xk, vk
                   Hi = Hf
                   accSteps = accSteps + 1
             ELSE
-                  vk = -vtildek1
+                  vk = -vtilde
                   GH = GHold
             END IF
 
@@ -444,12 +443,15 @@ c           return the log of acceptance probability, scalar
 
             PROBLOG = - betaN * (Hf-Hi)
 
-c            DO i = 1, N
-C                 Energia cinética
-c                  aux_Kf = DOT_PRODUCT(vtildek1(i,:),vtildek1(i,:))
-c                  aux_Ki = DOT_PRODUCT(vk(i,:),vk(i,:))
-c                  PROBLOG = PROBLOG - beta * (aux_Kf - aux_Ki)/2
-c            END DO
+C           Energia cinética
+            aux_Kf = 0.0
+            aux_Ki = 0.0
+            DO i = 1, N
+            aux_Kf = aux_Kf + DOT_PRODUCT(vtildek1(i,:), vtildek1(i,:))
+            aux_Ki = aux_Ki + DOT_PRODUCT(vtilde(i,:), vtilde(i,:))
+            END DO
+
+            PROBLOG = PROBLOG - betaN * (aux_Kf - aux_Ki)/2
        
             RETURN 
             END FUNCTION PROBLOG
